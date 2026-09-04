@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">
+  <Author>Antigravity AI</Author>
+  <Title>Görsel Üretim Prompt Rehberi</Title>
+ </DocumentProperties>
+ <Styles>
+  <Style ss:ID="Default" ss:Name="Normal">
+   <Alignment ss:Vertical="Top" ss:WrapText="1"/>
+   <Borders/>
+   <Font ss:FontName="Calibri" x:Family="Swiss" ss:Size="11" ss:Color="#222222"/>
+   <Interior/>
+   <NumberFormat/>
+   <Protection/>
+  </Style>
+  <Style ss:ID="Header">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CCCCCC"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CCCCCC"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CCCCCC"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CCCCCC"/>
+   </Borders>
+   <Font ss:FontName="Calibri" x:Family="Swiss" ss:Size="11" ss:Color="#FFFFFF" ss:Bold="1"/>
+   <Interior ss:Color="#1F497D" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="RowEven">
+   <Alignment ss:Vertical="Top" ss:WrapText="1"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E0E0E0"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E0E0E0"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E0E0E0"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E0E0E0"/>
+   </Borders>
+   <Interior ss:Color="#FFFFFF" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="RowOdd">
+   <Alignment ss:Vertical="Top" ss:WrapText="1"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E0E0E0"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E0E0E0"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E0E0E0"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E0E0E0"/>
+   </Borders>
+   <Interior ss:Color="#F2F6FA" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="CenterTextEven">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Top"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E0E0E0"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E0E0E0"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E0E0E0"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E0E0E0"/>
+   </Borders>
+   <Interior ss:Color="#FFFFFF" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="CenterTextOdd">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Top"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E0E0E0"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E0E0E0"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E0E0E0"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E0E0E0"/>
+   </Borders>
+   <Interior ss:Color="#F2F6FA" ss:Pattern="Solid"/>
+  </Style>
+ </Styles>
+ <Worksheet ss:Name="Eşya Prompt Rehberi">
+  <Table ss:ExpandedColumnCount="4" x:FullColumns="1" x:FullRows="1" ss:DefaultRowHeight="15">
+   <Column ss:Width="40"/>
+   <Column ss:Width="160"/>
+   <Column ss:Width="260"/>
+   <Column ss:Width="520"/>
+   <Row ss:Height="28">
+    <Cell ss:StyleID="Header"><Data ss:Type="String">No</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Kategori</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">İçereceği Eşyalar (Craft &amp; Oyun İhtiyacı)</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Kopyalanabilir Yapay Zeka Promptu (Midjourney / Flux)</Data></Cell>
+   </Row>
+   <Row ss:Height="75">
+    <Cell ss:StyleID="CenterTextEven"><Data ss:Type="Number">1</Data></Cell>
+    <Cell ss:StyleID="RowEven"><Data ss:Type="String">Ev Ahşap Mobilyaları</Data></Cell>
+    <Cell ss:StyleID="RowEven"><Data ss:Type="String">Masif ahşap yemek masası, oymalı sandalye, kitaplık rafı, rustik ahşap kapı, komodin</Data></Cell>
+    <Cell ss:StyleID="RowEven"><Data ss:Type="String">knolling grid collection of rustic wooden home furniture, heavy oak dining table, carved wooden chair, bookshelf, vintage interior door, studio product photography, clean isolated pure white background, frontal isometric angle, cinematic soft rim lighting, ultra sharp details, photorealistic AAA game asset, 8k resolution --v 6.0</Data></Cell>
+   </Row>
+   <Row ss:Height="75">
+    <Cell ss:StyleID="CenterTextOdd"><Data ss:Type="Number">2</Data></Cell>
+    <Cell ss:StyleID="RowOdd"><Data ss:Type="String">Elektronik El Aletleri</Data></Cell>
+    <Cell ss:StyleID="RowOdd"><Data ss:Type="String">Akülü darbeli matkap, sıcak hava tabancası, dijital havya lehim istasyonu, multimetre, taşlama makinesi</Data></Cell>
+    <Cell ss:StyleID="RowOdd"><Data ss:Type="String">knolling grid collection of heavy duty electronic power tools, cordless impact drill, digital soldering station, heat gun, multimeter, angle grinder, studio product photography, clean isolated pure white background, frontal isometric angle, cinematic soft rim lighting, ultra sharp details, photorealistic AAA game asset, 8k resolution --v 6.0</Data></Cell>
+   </Row>
+   <Row ss:Height="75">
+    <Cell ss:StyleID="CenterTextEven"><Data ss:Type="Number">3</Data></Cell>
+    <Cell ss:StyleID="RowEven"><Data ss:Type="String">Ev Elektroniği (Beyaz Eşya)</Data></Cell>
+    <Cell ss:StyleID="RowEven"><Data ss:Type="String">Paslanmaz çelik buzdolabı, retro çamaşır makinesi, kurutma makinesi, CRT tüplü TV, mikrodalga fırın</Data></Cell>
+    <Cell ss:StyleID="RowEven"><Data ss:Type="String">knolling grid collection of vintage and modern home appliances, stainless steel refrigerator, front-load washing machine, retro CRT television, microwave, studio product photography, clean isolated pure white background, frontal isometric angle, cinematic soft rim lighting, ultra sharp details, photorealistic AAA game asset, 8k resolution --v 6.0</Data></Cell>
+   </Row>
+   <Row ss:Height="75">
+    <Cell ss:StyleID="CenterTextOdd"><Data ss:Type="Number">4</Data></Cell>
+    <Cell ss:StyleID="RowOdd"><Data ss:Type="String">Büyülü Silahlar (Arcane)</Data></Cell>
+    <Cell ss:StyleID="RowOdd"><Data ss:Type="String">Rünlü parlayan çift elli kılıç, kadim meşe büyü asası, alevli hançer, buz kristalleriyle kaplı yay, rünik tırpan</Data></Cell>
+    <Cell ss:StyleID="RowOdd"><Data ss:Type="String">knolling grid collection of enchanted fantasy weapons, glowing engraved runic greatsword, ancient oak wizard staff with floating crystal, flaming dagger, frosted ice bow, studio product photography, clean isolated pure white background, frontal isometric angle, cinematic soft rim lighting, ultra sharp details, photorealistic AAA game asset, 8k resolution --v 6.0</Data></Cell>
+   </Row>
+   <Row ss:Height="75">
+    <Cell ss:StyleID="CenterTextEven"><Data ss:Type="Number">5</Data></Cell>
+    <Cell ss:StyleID="RowEven"><Data ss:Type="String">Büyülü Zırhlar</Data></Cell>
+    <Cell ss:StyleID="RowEven"><Data ss:Type="String">Ametist işlemeli göğüslük, rünik plakalı pantolon, ejderha pullu kask, ışıltılı deri eldivenler, hız botları</Data></Cell>
+    <Cell ss:StyleID="RowEven"><Data ss:Type="String">knolling grid collection of enchanted mystical armor pieces, amethyst engraved breastplate, runic greaves, dragon scale full helmet, glowing arcane gauntlets, armored boots, studio product photography, clean isolated pure white background, frontal isometric angle, cinematic soft rim lighting, ultra sharp details, photorealistic AAA game asset, 8k resolution --v 6.0</Data></Cell>
+   </Row>
+   <Row ss:Height="75">
+    <Cell ss:StyleID="CenterTextOdd"><Data ss:Type="Number">6</Data></Cell>
+    <Cell ss:StyleID="RowOdd"><Data ss:Type="String">Büyülü Takılar &amp; Tılsımlar</Data></Cell>
+    <Cell ss:StyleID="RowOdd"><Data ss:Type="String">Zümrüt taşlı altın muska kolye, safir damla küpeler, rünik manşet bileklik, gümüş halhal, yakut yüzük</Data></Cell>
+    <Cell ss:StyleID="RowOdd"><Data ss:Type="String">knolling grid collection of magical jewelry and talismans, emerald gold amulet necklace, sapphire gemstone earrings, runic silver cuff bracelet, ruby ring, studio product photography, clean isolated pure white background, frontal isometric angle, cinematic soft rim lighting, ultra sharp details, photorealistic AAA game asset, 8k resolution --v 6.0</Data></Cell>
+   </Row>
+   <Row ss:Height="75">
+    <Cell ss:StyleID="CenterTextEven"><Data ss:Type="Number">7</Data></Cell>
+    <Cell ss:StyleID="RowEven"><Data ss:Type="String">Gerçekçi Silahlar</Data></Cell>
+    <Cell ss:StyleID="RowEven"><Data ss:Type="String">Taktik sürgülü tüfek, yarı otomatik 9mm tabanca, av bıçağı, çelik dövme kılıç, modern arbalet (tatar yayı)</Data></Cell>
+    <Cell ss:StyleID="RowEven"><Data ss:Type="String">knolling grid collection of authentic realistic weapons, tactical bolt-action rifle, matte black 9mm pistol, steel hunting knife, forged arming sword, modern crossbow, studio product photography, clean isolated pure white background, frontal isometric angle, cinematic soft rim lighting, ultra sharp details, photorealistic AAA game asset, 8k resolution --v 6.0</Data></Cell>
+   </Row>
+   <Row ss:Height="75">
+    <Cell ss:StyleID="CenterTextOdd"><Data ss:Type="Number">8</Data></Cell>
+    <Cell ss:StyleID="RowOdd"><Data ss:Type="String">Kademeli Zırhlar (Tier 1: Bakır / Bronz)</Data></Cell>
+    <Cell ss:StyleID="RowOdd"><Data ss:Type="String">Dövme bakır göğüslük, bronz miğfer, bakır dizlikler, perçinli deri-bakır eldivenler, bronz kalkan</Data></Cell>
+    <Cell ss:StyleID="RowOdd"><Data ss:Type="String">knolling grid collection of tier 1 hammered copper and bronze armor pieces, copper cuirass, bronze spartan helmet, greaves, riveted copper gauntlets, round shield, studio product photography, clean isolated pure white background, frontal isometric angle, cinematic soft rim lighting, ultra sharp details, photorealistic AAA game asset, 8k resolution --v 6.0</Data></Cell>
+   </Row>
+   <Row ss:Height="75">
+    <Cell ss:StyleID="CenterTextEven"><Data ss:Type="Number">9</Data></Cell>
+    <Cell ss:StyleID="RowEven"><Data ss:Type="String">Kademeli Zırhlar (Tier 2: Çelik / Karbon)</Data></Cell>
+    <Cell ss:StyleID="RowEven"><Data ss:Type="String">Cilalı sertleştirilmiş çelik göğüslük, çelik vizörlü kask, çelik eldivenler, mafsallı bacak zırhı</Data></Cell>
+    <Cell ss:StyleID="RowEven"><Data ss:Type="String">knolling grid collection of tier 2 polished hardened steel knight armor, heavy steel breastplate, bascinet visor helmet, articulated gauntlets, plate sabatons, studio product photography, clean isolated pure white background, frontal isometric angle, cinematic soft rim lighting, ultra sharp details, photorealistic AAA game asset, 8k resolution --v 6.0</Data></Cell>
+   </Row>
+   <Row ss:Height="75">
+    <Cell ss:StyleID="CenterTextOdd"><Data ss:Type="Number">10</Data></Cell>
+    <Cell ss:StyleID="RowOdd"><Data ss:Type="String">Kademeli Zırhlar (Tier 3: Platinyum / Titanyum)</Data></Cell>
+    <Cell ss:StyleID="RowOdd"><Data ss:Type="String">Fütüristik platinyum-titanyum alaşımlı zırh, karbon takviyeli kompozit kask, şok emici taktik botlar</Data></Cell>
+    <Cell ss:StyleID="RowOdd"><Data ss:Type="String">knolling grid collection of tier 3 ultra modern titanium and platinum composite armor pieces, high-tech tactical ballistic vest, carbon fiber tactical helmet, reinforced exoskeleton boots, studio product photography, clean isolated pure white background, frontal isometric angle, cinematic soft rim lighting, ultra sharp details, photorealistic AAA game asset, 8k resolution --v 6.0</Data></Cell>
+   </Row>
+   <Row ss:Height="75">
+    <Cell ss:StyleID="CenterTextEven"><Data ss:Type="Number">11</Data></Cell>
+    <Cell ss:StyleID="RowEven"><Data ss:Type="String">Manuel El Aletleri &amp; Çanta</Data></Cell>
+    <Cell ss:StyleID="RowEven"><Data ss:Type="String">Paslı ağır çekiç, boru anahtarı, kombine pense, lokma takımı, metal alet çantası, tornavida seti</Data></Cell>
+    <Cell ss:StyleID="RowEven"><Data ss:Type="String">knolling grid collection of classic mechanic hand tools, heavy steel hammer, pipe wrench, combination pliers, socket set, rugged red metal toolbox, screwdrivers, studio product photography, clean isolated pure white background, frontal isometric angle, cinematic soft rim lighting, ultra sharp details, photorealistic AAA game asset, 8k resolution --v 6.0</Data></Cell>
+   </Row>
+   <Row ss:Height="75">
+    <Cell ss:StyleID="CenterTextOdd"><Data ss:Type="Number">12</Data></Cell>
+    <Cell ss:StyleID="RowOdd"><Data ss:Type="String">Çeşitli Mobilyalar &amp; Ev</Data></Cell>
+    <Cell ss:StyleID="RowOdd"><Data ss:Type="String">Kadife kanepe, yaylı deri yatak, pirinç abajur, antika el dokuması halı, ceviz gardırop, berjer</Data></Cell>
+    <Cell ss:StyleID="RowOdd"><Data ss:Type="String">knolling grid collection of domestic comfort furniture, tufted leather sofa, mattress, brass vintage floor lamp, rolled Persian carpet, walnut wardrobe, studio product photography, clean isolated pure white background, frontal isometric angle, cinematic soft rim lighting, ultra sharp details, photorealistic AAA game asset, 8k resolution --v 6.0</Data></Cell>
+   </Row>
+   <Row ss:Height="75">
+    <Cell ss:StyleID="CenterTextEven"><Data ss:Type="Number">13</Data></Cell>
+    <Cell ss:StyleID="RowEven"><Data ss:Type="String">Araba &amp; Mekanik Parçaları</Data></Cell>
+    <Cell ss:StyleID="RowEven"><Data ss:Type="String">Paslı V8 motor bloğu, krom egzoz manifoldu, deri yarış koltuğu, ahşap direksiyon, araba aküsü, turboşarj</Data></Cell>
+    <Cell ss:StyleID="RowEven"><Data ss:Type="String">knolling grid collection of automotive scrap and performance car parts, V8 engine block, chrome exhaust manifold, leather bucket seat, wooden steering wheel, car battery, turbocharger, studio product photography, clean isolated pure white background, frontal isometric angle, cinematic soft rim lighting, ultra sharp details, photorealistic AAA game asset, 8k resolution --v 6.0</Data></Cell>
+   </Row>
+   <Row ss:Height="75">
+    <Cell ss:StyleID="CenterTextOdd"><Data ss:Type="Number">14</Data></Cell>
+    <Cell ss:StyleID="RowOdd"><Data ss:Type="String">Ofis Ekipmanları &amp; Büro</Data></Cell>
+    <Cell ss:StyleID="RowOdd"><Data ss:Type="String">Lazer yazıcı, çift fanlı bilgisayar kasası, ergonomik ofis koltuğu, kahve makinesi, evrak imha makinesi</Data></Cell>
+    <Cell ss:StyleID="RowOdd"><Data ss:Type="String">knolling grid collection of modern office and tech equipment, laser multifunction printer, PC desktop tower, mesh ergonomic office chair, espresso coffee maker, paper shredder, studio product photography, clean isolated pure white background, frontal isometric angle, cinematic soft rim lighting, ultra sharp details, photorealistic AAA game asset, 8k resolution --v 6.0</Data></Cell>
+   </Row>
+   <Row ss:Height="75">
+    <Cell ss:StyleID="CenterTextEven"><Data ss:Type="Number">15</Data></Cell>
+    <Cell ss:StyleID="RowEven"><Data ss:Type="String">Sanat Eserleri &amp; Antikalar</Data></Cell>
+    <Cell ss:StyleID="RowEven"><Data ss:Type="String">Yağlı boya altın çerçeveli tablo, mermer büst heykeli, bronz şömine saati, porselen biblo vazosu</Data></Cell>
+    <Cell ss:StyleID="RowEven"><Data ss:Type="String">knolling grid collection of high-value fine art and antique decor, classical oil painting with ornate gold frame, marble Roman bust statue, antique bronze mantel clock, porcelain vase, studio product photography, clean isolated pure white background, frontal isometric angle, cinematic soft rim lighting, ultra sharp details, photorealistic AAA game asset, 8k resolution --v 6.0</Data></Cell>
+   </Row>
+   <Row ss:Height="75">
+    <Cell ss:StyleID="CenterTextOdd"><Data ss:Type="Number">16</Data></Cell>
+    <Cell ss:StyleID="RowOdd"><Data ss:Type="String">Müzik Aletleri</Data></Cell>
+    <Cell ss:StyleID="RowOdd"><Data ss:Type="String">Vintage elektro gitar, pirinç trompet, gümüş flüt, keman ve yayı, trampet davul, akordeon</Data></Cell>
+    <Cell ss:StyleID="RowOdd"><Data ss:Type="String">knolling grid collection of vintage musical instruments, sunburst electric guitar, brass trumpet, polished silver flute, wooden violin with bow, snare drum, accordion, studio product photography, clean isolated pure white background, frontal isometric angle, cinematic soft rim lighting, ultra sharp details, photorealistic AAA game asset, 8k resolution --v 6.0</Data></Cell>
+   </Row>
+   <Row ss:Height="75">
+    <Cell ss:StyleID="CenterTextEven"><Data ss:Type="Number">17</Data></Cell>
+    <Cell ss:StyleID="RowEven"><Data ss:Type="String">Zanaat Tezgahı Çekirdek Donanımları</Data></Cell>
+    <Cell ss:StyleID="RowEven"><Data ss:Type="String">Ultrasonik temizleme havuzu, hassas lehim istasyonu, mikrometre kumpas, döküm mengene, optik büyüteç</Data></Cell>
+    <Cell ss:StyleID="RowEven"><Data ss:Type="String">knolling grid collection of precision workshop crafting bench equipment, ultrasonic cleaning bath chamber, precision SMD soldering station, digital micrometer caliper, cast iron bench vise, articulated magnifying lamp, studio product photography, clean isolated pure white background, frontal isometric angle, cinematic soft rim lighting, ultra sharp details, photorealistic AAA game asset, 8k resolution --v 6.0</Data></Cell>
+   </Row>
+   <Row ss:Height="75">
+    <Cell ss:StyleID="CenterTextOdd"><Data ss:Type="Number">18</Data></Cell>
+    <Cell ss:StyleID="RowOdd"><Data ss:Type="String">Laboratuvar, Kimya &amp; Simya</Data></Cell>
+    <Cell ss:StyleID="RowOdd"><Data ss:Type="String">Cam damıtma imbiği, Bunsen ocağı, asit dolu damlalıklı şişeler, mikroskop, santrifüj tüpleri</Data></Cell>
+    <Cell ss:StyleID="RowOdd"><Data ss:Type="String">knolling grid collection of chemical distillation and alchemy laboratory glass apparatus, glass condenser coil flask, bunsen burner, amber acid reagent bottles, brass vintage microscope, test tubes rack, studio product photography, clean isolated pure white background, frontal isometric angle, cinematic soft rim lighting, ultra sharp details, photorealistic AAA game asset, 8k resolution --v 6.0</Data></Cell>
+   </Row>
+   <Row ss:Height="75">
+    <Cell ss:StyleID="CenterTextEven"><Data ss:Type="Number">19</Data></Cell>
+    <Cell ss:StyleID="RowEven"><Data ss:Type="String">Ağır Sanayi &amp; Fabrika Parçaları</Data></Cell>
+    <Cell ss:StyleID="RowEven"><Data ss:Type="String">Ağır buhar vanası, endüstriyel basınç göstergesi, dev döküm çark dişlisi, hidrolik silindir pistonu</Data></Cell>
+    <Cell ss:StyleID="RowEven"><Data ss:Type="String">knolling grid collection of heavy industrial plumbing and factory machinery components, heavy brass steam valve, industrial pressure gauge manometer, cast iron gear cogwheels, hydraulic piston cylinder, studio product photography, clean isolated pure white background, frontal isometric angle, cinematic soft rim lighting, ultra sharp details, photorealistic AAA game asset, 8k resolution --v 6.0</Data></Cell>
+   </Row>
+   <Row ss:Height="75">
+    <Cell ss:StyleID="CenterTextOdd"><Data ss:Type="Number">20</Data></Cell>
+    <Cell ss:StyleID="RowOdd"><Data ss:Type="String">Taktik &amp; Hayatta Kalma Donanımları</Data></Cell>
+    <Cell ss:StyleID="RowOdd"><Data ss:Type="String">Askeri su geçirmez sırt çantası, taktik gaz maskesi, çelik ordu matarası, dürbün, acil durum telsizi</Data></Cell>
+    <Cell ss:StyleID="RowEven"><Data ss:Type="String">knolling grid collection of military survivalist and tactical field gear, coyote tactical backpack, military gas mask, steel canteen flask, rugged binoculars, military handheld radio transceiver, studio product photography, clean isolated pure white background, frontal isometric angle, cinematic soft rim lighting, ultra sharp details, photorealistic AAA game asset, 8k resolution --v 6.0</Data></Cell>
+   </Row>
+   <Row ss:Height="75">
+    <Cell ss:StyleID="CenterTextEven"><Data ss:Type="Number">21</Data></Cell>
+    <Cell ss:StyleID="RowEven"><Data ss:Type="String">Melez Eşyalar (Arcane-Tech)</Data></Cell>
+    <Cell ss:StyleID="RowEven"><Data ss:Type="String">Neon plazma akülü büyü tüfeği, holografik kadim parşömen, siber-rünik katana, enerji kristali güç çekirdeği</Data></Cell>
+    <Cell ss:StyleID="RowEven"><Data ss:Type="String">knolling grid collection of hybrid cyber-magic arcane technology equipment, plasma-infused runic rifle, glowing holographic ancient scroll device, cybernetic engraved neon katana, arcane energy crystal reactor core, studio product photography, clean isolated pure white background, frontal isometric angle, cinematic soft rim lighting, ultra sharp details, photorealistic AAA game asset, 8k resolution --v 6.0</Data></Cell>
+   </Row>
+  </Table>
+  <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
+   <PageSetup>
+    <Header x:Margin="0.3"/>
+    <Footer x:Margin="0.3"/>
+    <PageMargins x:Bottom="0.75" x:Left="0.7" x:Right="0.7" x:Top="0.75"/>
+   </PageSetup>
+   <Print>
+    <ValidPrinterInfo/>
+    <PaperSizeIndex>9</PaperSizeIndex>
+    <HorizontalResolution>600</HorizontalResolution>
+    <VerticalResolution>600</VerticalResolution>
+   </Print>
+   <Selected/>
+   <Panes>
+    <Pane>
+     <Number>3</Number>
+     <ActiveRow>1</ActiveRow>
+    </Pane>
+   </Panes>
+   <ProtectObjects>False</ProtectObjects>
+   <ProtectScenarios>False</ProtectScenarios>
+  </WorksheetOptions>
+ </Worksheet>
+</Workbook>
