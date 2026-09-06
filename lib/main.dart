@@ -3,36 +3,37 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/game.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 // import 'package:path_provider/path_provider.dart';
-// import 'package:isar/isar.dart';
-
+import 'package:flutter/services.dart';
 import 'package:yeni_oyun_sablon/core/database/database_service.dart';
-import 'package:yeni_oyun_sablon/core/localization/localization_service.dart';
 import 'package:yeni_oyun_sablon/core/theme/game_theme.dart';
 import 'package:yeni_oyun_sablon/features/auction/presentation/live_auction_screen.dart';
+import 'package:yeni_oyun_sablon/features/city_map/presentation/city_map_screen.dart';
+import 'package:yeni_oyun_sablon/features/onboarding/providers/ftue_provider.dart';
+import 'package:yeni_oyun_sablon/features/storage_raid/presentation/storage_raid_screen.dart';
+import 'package:yeni_oyun_sablon/features/story_intro/presentation/story_intro_screen.dart';
 import 'package:flame/flame.dart';
+import 'package:yeni_oyun_sablon/core/localization/localization_service.dart';
 
 void main() async {
-  // Flutter binding'lerini başlatıyoruz
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Flame'in assets/images/ ön ekini sıfırlıyoruz (Doğrudan assets/items/ kullanabilmek için)
   Flame.images.prefix = '';
+
+  // Zorunlu Yatay (Landscape) Çift El Modu Kilidi
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
+  ]);
   
-  // Hive Veritabanını Başlatma
   await Hive.initFlutter();
   await Hive.openBox('settingsBox');
-
-  // Çok Dilli Yerelleştirme Servisini Başlatma (TR, EN, RU, ES)
   await LocalizationService.instance.init();
   
-  // Evrensel Veritabanı ve Tohumlama Başlatma
   try {
     await DatabaseService.instance.init();
   } catch (e) {
     debugPrint('Veritabanı başlatma notu: $e');
   }
 
-  // Riverpod State Management için ProviderScope ile sarıyoruz
   runApp(
     const ProviderScope(
       child: OyunSablonApp(),
@@ -40,16 +41,34 @@ void main() async {
   );
 }
 
-class OyunSablonApp extends StatelessWidget {
+class OyunSablonApp extends ConsumerWidget {
   const OyunSablonApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ftueStep = ref.watch(ftueProvider);
+
+    Widget homeWidget;
+    switch (ftueStep) {
+      case FTUEStep.storyIntro:
+        homeWidget = const StoryIntroScreen();
+        break;
+      case FTUEStep.scriptedAuction:
+        homeWidget = const LiveAuctionScreen(isFirstAuction: true);
+        break;
+      case FTUEStep.tetrisTutorial:
+        homeWidget = const StorageRaidScreen();
+        break;
+      default:
+        homeWidget = const CityMapScreen();
+        break;
+    }
+
     return MaterialApp(
       title: 'Depo Avcıları',
       debugShowCheckedModeBanner: false,
       theme: GameTheme.themeData,
-      home: const LiveAuctionScreen(),
+      home: homeWidget,
     );
   }
 }

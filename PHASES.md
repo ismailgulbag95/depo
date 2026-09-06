@@ -23,11 +23,11 @@ Bu doküman, Depo Avcıları (Storage Raiders & RPG) projesinin modüler, birbir
 
 ---
 
-## 🔹 FAZ 1: Çekirdek Altyapı, Isar Veritabanı ve Bitboard Matematik Motoru
+## 🔹 FAZ 1: Çekirdek Altyapı, Hive Veritabanı ve Bitboard Matematik Motoru
 *Projenin omurgası, veri saklama mimarisi ve yüksek performanslı polyomino çarpışma fiziği.*
 
 ### Kapsam ve Teslimatlar:
-1. **Veri Modelleri & Isar Database Entegrasyonu:**
+1. **Veri Modelleri & Hive Database Entegrasyonu:**
    - `Item`: ID, adı, boyut (GxY / maske), kategori, temel değer, kondisyon (Hurda -> Mistik), ağırlık, sprite yolu.
    - `StorageUnit`: Depo boyutu, zorluk seviyesi, katmanlı eşya listesi, açılış bedeli.
    - `PlayerProfile`: Bakiye, tecrübe puanı, açık lisanslar, garaj seviyesi.
@@ -113,4 +113,4 @@ Bu doküman, Depo Avcıları (Storage Raiders & RPG) projesinin modüler, birbir
 2. **Görsel & İşitsel Cila (Game Feel & Audio):**
    - Depo ve bagaj ekranlarında parçacık efektleri (Particles), başarı sesleri ve ekran sarsıntısı.
 3. **Performans Optimizasyonu & QA Smoke Check:**
-   - Isar sorgu indekslemeleri, Flame component pooling, 60-120 FPS kararlılık testi.
+   - Hive Box optimizasyonları ve TypeAdapter serileştirmeleri, Flame component pooling, 60-120 FPS kararlılık testi.

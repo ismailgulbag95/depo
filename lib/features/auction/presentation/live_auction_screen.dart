@@ -7,11 +7,14 @@ import 'package:yeni_oyun_sablon/core/constants/asset_paths.dart';
 import 'package:yeni_oyun_sablon/core/theme/game_theme.dart';
 import 'package:yeni_oyun_sablon/core/widgets/arcade_button.dart';
 import 'package:yeni_oyun_sablon/core/widgets/auction_stamp.dart';
+import 'package:yeni_oyun_sablon/core/widgets/debug_console_sheet.dart';
 import 'package:yeni_oyun_sablon/core/widgets/diegetic_metal_panel.dart';
 import 'package:yeni_oyun_sablon/core/widgets/game_screen_shake.dart';
 import 'package:yeni_oyun_sablon/core/widgets/hazard_stripe_banner.dart';
 import 'package:yeni_oyun_sablon/core/widgets/retro_led_display.dart';
-import 'package:yeni_oyun_sablon/features/dungeon/presentation/dungeon_hub_screen.dart';
+import 'package:yeni_oyun_sablon/features/city_map/presentation/city_map_screen.dart';
+import 'package:yeni_oyun_sablon/features/onboarding/providers/ftue_provider.dart';
+import 'package:yeni_oyun_sablon/features/onboarding/widgets/ftue_guide_overlay.dart';
 import 'package:yeni_oyun_sablon/features/player_profile/providers/player_profile_provider.dart';
 import 'package:yeni_oyun_sablon/features/storage_raid/presentation/storage_raid_screen.dart';
 import 'package:yeni_oyun_sablon/features/storage_raid/services/storage_generator_service.dart';
@@ -29,7 +32,9 @@ class AuctionBidder {
   final String avatar;
   final String? imagePath;
   final Color color;
-  final int maxBudget;
+  int maxBudget;
+  bool isDroppedOut;
+  final String dropOutReason;
 
   AuctionBidder({
     required this.name,
@@ -37,12 +42,19 @@ class AuctionBidder {
     this.imagePath,
     required this.color,
     required this.maxBudget,
+    this.isDroppedOut = false,
+    required this.dropOutReason,
   });
 }
 
 /// Canlı Amerikan Açık Artırma / Müzayede Ekranı (Storage Wars Deneyimi)
 class LiveAuctionScreen extends ConsumerStatefulWidget {
-  const LiveAuctionScreen({super.key});
+  final bool isFirstAuction;
+
+  const LiveAuctionScreen({
+    super.key,
+    this.isFirstAuction = false,
+  });
 
   @override
   ConsumerState<LiveAuctionScreen> createState() => _LiveAuctionScreenState();
@@ -58,10 +70,14 @@ class _LiveAuctionScreenState extends ConsumerState<LiveAuctionScreen>
   int _biddingSeconds = 30;
 
   // Açık artırma parametreleri
-  int _currentBid = 250;
+  int _currentBid = 150;
   String _highestBidderName = 'Açılış';
   bool _isPlayerHighest = false;
   bool _playerWon = false;
+
+  // Scripted Tutorial Durumu
+  int _scriptedStep = 0; // 0: 200 bas, 1: 350 bas, 2: 450 bas
+  bool get _isScripted => widget.isFirstAuction || ref.read(ftueProvider) == FTUEStep.scriptedAuction;
 
   // Screen Shake Controller
   final GameScreenShakeController _shakeController = GameScreenShakeController();
@@ -79,40 +95,39 @@ class _LiveAuctionScreenState extends ConsumerState<LiveAuctionScreen>
   ];
 
   final List<String> _biddingChants = [
-    'Kim veriyor 300? 300 var mı 300! Yirmi beş, elli, yetmiş beş!..',
-    '350 geldi Dave’den! 400 kimde, 400 arıyorum, 400, 400!..',
-    '450 dedi Laura! Dört yüz, dört yüz elli var mı arkada!..',
-    '550 geldi Gus’tan! Beş yüz elli, altı yüz! Kaçırmayın bu depoyu!..',
-    'Altı yüz elli geldi! Altı yüz bir, altı yüz iki! Kim arttırıyor!..',
-    'Yedi yüz elli! Bıdıbıdı yedi yüz, sekiz yüz arıyorum!..',
-    'Sekiz yüz geldi oyuncumuzdan! Sekiz yüz bir! Sekiz yüz iki!..',
-    'Dokuz yüz elli var mı! Son teklifler!..',
+    'Kim veriyor? Fiyat yükseliyor! Yirmi beş, elli, yetmiş beş!..',
+    'Teklif geldi! Var mı arttıran, arıyorum, arıyorum!..',
+    'Deponun değeri yüksek! Kaçırmayın bu depoyu!..',
+    'Son teklifler! Bir!.. İki!.. Kimse yok mu?!..',
   ];
 
   String _currentChant = 'Kepenkler açılıyor! 15 saniye dışarıdan inceleme süreniz başladı!';
 
   // Rakipler
-  final List<AuctionBidder> _bidders = [
+  late final List<AuctionBidder> _bidders = [
     AuctionBidder(
-      name: 'Dave "Kurnaz"',
+      name: 'Dave "Kral" Hester',
       avatar: '🤠',
       imagePath: GameAssetPaths.rivalDave,
-      color: Colors.orange,
-      maxBudget: 1200,
+      color: const Color(0xFFE53935),
+      maxBudget: 650,
+      dropOutReason: 'Bu fiyata değmez!',
     ),
     AuctionBidder(
-      name: 'Laura "Antikacı"',
-      avatar: '🕶️',
+      name: 'Laura "Şahin Göz" Dotson',
+      avatar: '👒',
       imagePath: GameAssetPaths.rivalLaura,
-      color: Colors.purpleAccent,
-      maxBudget: 1600,
+      color: const Color(0xFF8E24AA),
+      maxBudget: 750,
+      dropOutReason: 'Koleksiyon parçası yok, pas!',
     ),
     AuctionBidder(
-      name: 'Gus "Tırcı"',
+      name: 'Gus "Ağır Sanayi"',
       avatar: '🧢',
       imagePath: GameAssetPaths.rivalGus,
-      color: Colors.blueAccent,
-      maxBudget: 950,
+      color: const Color(0xFFFFB300),
+      maxBudget: 550,
+      dropOutReason: 'Ağır alet göremedim, çekiliyorum!',
     ),
   ];
 
@@ -127,8 +142,9 @@ class _LiveAuctionScreenState extends ConsumerState<LiveAuctionScreen>
 
     _shutterController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1800),
+      duration: const Duration(milliseconds: 1400),
     );
+
     _shutterAnimation = CurvedAnimation(
       parent: _shutterController,
       curve: Curves.easeInOutCubic,
@@ -137,17 +153,52 @@ class _LiveAuctionScreenState extends ConsumerState<LiveAuctionScreen>
     _loadNewStorageUnit();
   }
 
+  @override
+  void dispose() {
+    _countdownTimer?.cancel();
+    _botBidTimer?.cancel();
+    _chantTimer?.cancel();
+    _shutterController.dispose();
+    super.dispose();
+  }
+
   /// 276 eşya arasından yepyeni prosedürel bir depo üretir ve başlatır
   Future<void> _loadNewStorageUnit() async {
-    final unit = await StorageGeneratorService.instance.generateRandomUnit();
+    final unlocked = ref.read(playerProfileProvider).unlockedDistricts;
+    final unit = await StorageGeneratorService.instance.generateRandomUnit(
+      isFirstAuction: _isScripted,
+      unlockedDistricts: unlocked,
+    );
     if (mounted) {
       setState(() {
         _currentUnit = unit;
-        _currentBid = unit.startingBid;
+        _currentBid = _isScripted ? 150 : unit.startingBid;
+        _highestBidderName = 'Açılış';
+        _isPlayerHighest = false;
+        _scriptedStep = 0;
+        _initBiddersForUnit(unit);
       });
 
       _shutterController.forward();
       _startInspectionPhase();
+    }
+  }
+
+  void _initBiddersForUnit(GeneratedStorageUnit unit) {
+    if (_isScripted) {
+      _bidders[0].maxBudget = 400; // Dave
+      _bidders[1].maxBudget = 300; // Laura
+      _bidders[2].maxBudget = 300; // Gus
+    } else {
+      // Toplam değere oranla dinamik bütçe
+      final est = unit.totalEstimatedValue;
+      _bidders[0].maxBudget = (est * (0.65 + _rnd.nextDouble() * 0.25)).round(); // Dave
+      _bidders[1].maxBudget = (est * (0.75 + _rnd.nextDouble() * 0.35)).round(); // Laura
+      _bidders[2].maxBudget = (est * (0.55 + _rnd.nextDouble() * 0.25)).round(); // Gus
+    }
+
+    for (final b in _bidders) {
+      b.isDroppedOut = false;
     }
   }
 
@@ -198,43 +249,142 @@ class _LiveAuctionScreenState extends ConsumerState<LiveAuctionScreen>
     });
 
     _chantTimer?.cancel();
-    _chantTimer = Timer.periodic(const Duration(milliseconds: 1400), (timer) {
+    _chantTimer = Timer.periodic(const Duration(milliseconds: 2200), (timer) {
       if (!mounted || _phase != AuctionPhase.bidding) return;
-      setState(() {
-        _currentChant = _biddingChants[_rnd.nextInt(_biddingChants.length)];
-      });
+      if (!_currentChant.contains('çekiliyorum') && !_currentChant.contains('pas')) {
+        setState(() {
+          _currentChant = _biddingChants[_rnd.nextInt(_biddingChants.length)];
+        });
+      }
     });
 
-    _scheduleNextBotBid();
+    if (!_isScripted) {
+      _scheduleNextBotBid();
+    }
   }
 
+  /// Normal Rastgele Bot Teklifleri
   void _scheduleNextBotBid() {
-    if (_phase != AuctionPhase.bidding) return;
+    if (_phase != AuctionPhase.bidding || _isScripted) return;
 
-    final delay = Duration(milliseconds: 1600 + _rnd.nextInt(1800));
+    final est = _currentUnit?.totalEstimatedValue ?? 1000;
+    final ratio = (_currentBid / est).clamp(0.2, 1.6);
+    final dynamicDelayMs = (1500 + (ratio * 1800)).round();
+    final delay = Duration(milliseconds: dynamicDelayMs + _rnd.nextInt(1000));
+
     _botBidTimer = Timer(delay, () {
       if (!mounted || _phase != AuctionPhase.bidding) return;
 
-      final candidateBidders = _bidders.where((b) => b.maxBudget > _currentBid).toList();
+      final activeBidders = _bidders.where((b) => !b.isDroppedOut && b.maxBudget > _currentBid).toList();
 
-      if (candidateBidders.isNotEmpty && _biddingSeconds > 2) {
-        final bidder = candidateBidders[_rnd.nextInt(candidateBidders.length)];
-        final increment = (_rnd.nextBool() ? 50 : 100);
-        final newBid = _currentBid + increment;
-
-        if (newBid <= bidder.maxBudget) {
-          setState(() {
-            _currentBid = newBid;
-            _highestBidderName = '${bidder.avatar} ${bidder.name}';
-            _isPlayerHighest = false;
-            _currentChant = '${bidder.name} $newBid ₺ verdi! Kim geçiyor $newBid ₺’yi?!';
-          });
-          _shakeController.shake(intensity: 4.0);
-          HapticFeedback.lightImpact();
+      if (activeBidders.isEmpty) {
+        if (_highestBidderName != 'Açılış') {
+          _finishAuctionEarlyDueToAllPass();
         }
+        return;
+      }
+
+      final bidder = activeBidders[_rnd.nextInt(activeBidders.length)];
+      final inc = 50;
+      final newBid = _currentBid + inc;
+
+      if (newBid <= bidder.maxBudget) {
+        setState(() {
+          _currentBid = newBid;
+          _highestBidderName = '${bidder.avatar} ${bidder.name}';
+          _isPlayerHighest = false;
+          _currentChant = '${bidder.name} $newBid ₺ verdi! Kim geçiyor $newBid ₺’yi?!';
+        });
+        _shakeController.shake(intensity: 4.0);
+        HapticFeedback.lightImpact();
       }
 
       _scheduleNextBotBid();
+    });
+  }
+
+  /// Scripted Onboarding Adımı Bot Yanıtları
+  void _handleScriptedBotResponses(int playerBid) {
+    if (playerBid == 200) {
+      // 1. Adım: Dave 250 verir, sonra Gus 300 verir
+      Timer(const Duration(milliseconds: 900), () {
+        if (!mounted || _phase != AuctionPhase.bidding) return;
+        setState(() {
+          _currentBid = 250;
+          _highestBidderName = '${_bidders[0].avatar} ${_bidders[0].name}';
+          _isPlayerHighest = false;
+          _currentChant = 'Dave: "250 ₺! Bunu bana bırakın evlat!"';
+        });
+        _shakeController.shake(intensity: 4.0);
+        HapticFeedback.lightImpact();
+
+        Timer(const Duration(milliseconds: 1100), () {
+          if (!mounted || _phase != AuctionPhase.bidding) return;
+          setState(() {
+            _currentBid = 300;
+            _highestBidderName = '${_bidders[2].avatar} ${_bidders[2].name}';
+            _isPlayerHighest = false;
+            _currentChant = 'Gus: "300 ₺! Benim için çerez parası!"';
+            _scriptedStep = 1; // Sıradaki oyuncu teklifi: 350
+          });
+          _shakeController.shake(intensity: 4.0);
+          HapticFeedback.lightImpact();
+        });
+      });
+    } else if (playerBid == 350) {
+      // 2. Adım: Laura PAS geçer, Dave 400 basar, Gus PAS geçer
+      Timer(const Duration(milliseconds: 900), () {
+        if (!mounted || _phase != AuctionPhase.bidding) return;
+        setState(() {
+          _bidders[1].isDroppedOut = true; // Laura pas
+          _currentChant = 'Laura: "350 ₺ mi? Bu fiyata değmez, ben çekiliyorum!"';
+        });
+
+        Timer(const Duration(milliseconds: 1100), () {
+          if (!mounted || _phase != AuctionPhase.bidding) return;
+          setState(() {
+            _currentBid = 400;
+            _highestBidderName = '${_bidders[0].avatar} ${_bidders[0].name}';
+            _isPlayerHighest = false;
+            _bidders[2].isDroppedOut = true; // Gus pas
+            _currentChant = 'Dave: "400 ₺! Son şansın evlat!" Gus: "Ben de pas!"';
+            _scriptedStep = 2; // Sıradaki oyuncu teklifi: 450
+          });
+          _shakeController.shake(intensity: 5.0);
+          HapticFeedback.lightImpact();
+        });
+      });
+    } else if (playerBid == 450) {
+      // 3. Adım: Dave PAS geçer -> Depo 450 ₺'ye oyuncuya kalır
+      Timer(const Duration(milliseconds: 900), () {
+        if (!mounted || _phase != AuctionPhase.bidding) return;
+        setState(() {
+          _bidders[0].isDroppedOut = true; // Dave pas
+          _currentChant = 'Dave: "Lanet olsun, 450 ₺ çok fazla! Depo senin olsun!"';
+        });
+        _shakeController.shake(intensity: 5.0);
+        _finishAuctionEarlyDueToAllPass();
+      });
+    }
+  }
+
+  /// Tüm rakipler pas dediğinde süreyi beklemeden hemen tokmağı vurur
+  void _finishAuctionEarlyDueToAllPass() {
+    _countdownTimer?.cancel();
+    _botBidTimer?.cancel();
+    _chantTimer?.cancel();
+
+    setState(() {
+      _currentChant = 'TÜM RAKİPLER ÇEKİLDİ! BAŞKA TEKLİF YOK! SATTIIMM!..';
+    });
+    _shakeController.shake(intensity: 6.0);
+    HapticFeedback.heavyImpact();
+
+    // 800ms sonra resmi bitiş faturası ve tokmağı vur
+    Timer(const Duration(milliseconds: 800), () {
+      if (mounted && _phase == AuctionPhase.bidding) {
+        _finishAuction();
+      }
     });
   }
 
@@ -259,6 +409,19 @@ class _LiveAuctionScreenState extends ConsumerState<LiveAuctionScreen>
 
     _shakeController.shake(intensity: 7.0);
     HapticFeedback.heavyImpact();
+
+    if (_isScripted) {
+      _handleScriptedBotResponses(newBid);
+    } else {
+      for (final b in _bidders) {
+        if (!b.isDroppedOut && _currentBid >= b.maxBudget) {
+          b.isDroppedOut = true;
+        }
+      }
+      if (_bidders.every((b) => b.isDroppedOut)) {
+        _finishAuctionEarlyDueToAllPass();
+      }
+    }
   }
 
   void _finishAuction() {
@@ -279,16 +442,26 @@ class _LiveAuctionScreenState extends ConsumerState<LiveAuctionScreen>
 
     if (_playerWon) {
       ref.read(playerProfileProvider.notifier).deductCash(_currentBid);
-    }
-  }
+      if (_isScripted) {
+        ref.read(ftueProvider.notifier).setStep(FTUEStep.tetrisTutorial);
+      }
 
-  @override
-  void dispose() {
-    _shutterController.dispose();
-    _countdownTimer?.cancel();
-    _botBidTimer?.cancel();
-    _chantTimer?.cancel();
-    super.dispose();
+      // Kullanıcı seçimi: Tokmak vurulduktan 1.5 saniye sonra otomatik depoya geç
+      Timer(const Duration(milliseconds: 1500), () {
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            PageRouteBuilder(
+              transitionDuration: const Duration(milliseconds: 600),
+              pageBuilder: (context, animation, secondaryAnimation) =>
+                  StorageRaidScreen(storageUnit: _currentUnit),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return FadeTransition(opacity: animation, child: child);
+              },
+            ),
+          );
+        }
+      });
+    }
   }
 
   @override
@@ -304,89 +477,98 @@ class _LiveAuctionScreenState extends ConsumerState<LiveAuctionScreen>
             children: [
               // 1. Üst Bar: Diegetik Skorbord & Süre Sayacı
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                child: Row(
-                  children: [
-                    // Depo Bilgi Rozeti
-                    DiegeticMetalPanel(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      showRivets: false,
-                      borderRadius: 8,
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: GameColors.gold.withValues(alpha: 0.25),
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(color: GameColors.gold, width: 1),
-                            ),
-                            child: Text(
-                              _currentUnit?.unitNumber ?? '#204',
-                              style: GameTypography.display(
-                                color: GameColors.goldLight,
-                                fontSize: 11,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      // Depo Bilgi Rozeti
+                      DiegeticMetalPanel(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        showRivets: false,
+                        borderRadius: 8,
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: GameColors.gold.withValues(alpha: 0.25),
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(color: GameColors.gold, width: 1),
                               ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                _phase == AuctionPhase.inspection
-                                    ? 'GÖZLEM SÜRESİ'
-                                    : 'CANLI TEKLİF',
+                              child: Text(
+                                _currentUnit?.unitNumber ?? '#204',
                                 style: GameTypography.display(
-                                  color: _phase == AuctionPhase.inspection
-                                      ? GameColors.neonCyan
-                                      : GameColors.hazardYellow,
-                                  fontSize: 10,
+                                  color: GameColors.goldLight,
+                                  fontSize: 11,
                                 ),
                               ),
-                              Text(
-                                _currentUnit?.archetype.title ?? 'Açık Artırma',
-                                style: GameTypography.body(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
+                            ),
+                            const SizedBox(width: 8),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  _phase == AuctionPhase.inspection
+                                      ? 'GÖZLEM SÜRESİ'
+                                      : 'CANLI TEKLİF',
+                                  style: GameTypography.display(
+                                    color: _phase == AuctionPhase.inspection
+                                        ? GameColors.neonCyan
+                                        : GameColors.hazardYellow,
+                                    fontSize: 10,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ],
+                                Text(
+                                  _currentUnit?.archetype.title ?? 'Açık Artırma',
+                                  style: GameTypography.body(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
 
-                    const Spacer(),
+                      // 🛠️ Hızlı Debug Modu Butonu
+                      IconButton(
+                        tooltip: 'Geliştirici Test Modu',
+                        icon: const Icon(Icons.bug_report, color: GameColors.neonCyan, size: 22),
+                        onPressed: () => DebugConsoleSheet.show(context),
+                      ),
+                      const SizedBox(width: 4),
 
-                    // 🏰 Zindan & Kışla Karargahı Butonu
-                    IconButton(
-                      tooltip: 'Zindan & Kışla Karargahı',
-                      icon: const Icon(Icons.castle, color: GameColors.goldLight, size: 24),
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const DungeonHubScreen()),
-                        );
-                      },
-                    ),
-                    const SizedBox(width: 4),
+                      // 🗺️ Şehir Haritası Butonu
+                      IconButton(
+                        tooltip: 'Şehir Haritası',
+                        icon: const Icon(Icons.map, color: GameColors.neonCyan, size: 24),
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const CityMapScreen()),
+                          );
+                        },
+                      ),
+                      const SizedBox(width: 4),
 
-                    // Retro LED Süre Sayacı
-                    RetroLedDisplay(
-                      icon: _phase == AuctionPhase.inspection ? Icons.visibility : Icons.timer,
-                      value: _phase == AuctionPhase.inspection
-                          ? '$_inspectionSeconds SN'
-                          : '$_biddingSeconds SN',
-                      ledColor: _phase == AuctionPhase.inspection
-                          ? GameColors.neonCyan
-                          : _biddingSeconds <= 5
-                              ? GameColors.lossRed
-                              : GameColors.gold,
-                      fontSize: 16,
-                    ),
-                  ],
+                      // Retro LED Süre Sayacı
+                      RetroLedDisplay(
+                        icon: _phase == AuctionPhase.inspection ? Icons.visibility : Icons.timer,
+                        value: _phase == AuctionPhase.inspection
+                            ? '$_inspectionSeconds SN'
+                            : '$_biddingSeconds SN',
+                        ledColor: _phase == AuctionPhase.inspection
+                            ? GameColors.neonCyan
+                            : _biddingSeconds <= 5
+                                ? GameColors.lossRed
+                                : GameColors.gold,
+                        fontSize: 14,
+                      ),
+                    ],
+                  ),
                 ),
               ),
 
@@ -397,91 +579,317 @@ class _LiveAuctionScreenState extends ConsumerState<LiveAuctionScreen>
               ),
               const SizedBox(height: 6),
 
-              // 2. Depo Sahnesi & Animasyonla Açılan Kepenk (Diegetik Görünüm)
+                   // 2. Çift Elle Oynama Alanı: SOL %50 Depo Vitrini, SAĞ %50 Pazarlık Konsolu
               Expanded(
-                flex: 48,
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 14),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF141418),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: GameColors.panelBorder, width: 2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.8),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Stack(
-                      children: [
-                        // Depo İçindeki Eşyaların Gerçekçi Görünümü
-                        if (_currentUnit != null)
-                          Positioned.fill(
-                            child: Container(
-                              decoration: const BoxDecoration(
-                                gradient: RadialGradient(
-                                  center: Alignment(0, -0.2),
-                                  radius: 1.2,
-                                  colors: [
-                                    Color(0xFF28231C),
-                                    Color(0xFF13110E),
-                                  ],
-                                ),
-                              ),
-                              padding: const EdgeInsets.all(12),
-                              child: Column(
-                                children: [
-                                  // Arka Raflar (Katman 3)
-                                  Expanded(
-                                    flex: 4,
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        border: Border(
-                                          bottom: BorderSide(
-                                            color: Colors.white.withValues(alpha: 0.12),
-                                            width: 3,
-                                          ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // --- SOL %50: DEPO VİTRİNİ (Kepenk, Perspektif Zemin, Eşyalar & Kaşe) ---
+                    Expanded(
+                      flex: 5,
+                      child: Container(
+                        margin: const EdgeInsets.only(left: 10, right: 4, bottom: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF141418),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: GameColors.panelBorder, width: 2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.8),
+                              blurRadius: 16,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Stack(
+                            children: [
+                              // Depo İçi: Gerçekçi Duvar, Beton Zemin ve Doğrudan Yerde Duran Eşyalar
+                              if (_currentUnit != null)
+                                Positioned.fill(
+                                  child: Stack(
+                                    children: [
+                                      // 1. Arka Plan Duvar & Tavan & Zemin 3D Perspektif Çizimi
+                                      CustomPaint(
+                                        size: Size.infinite,
+                                        painter: _StoragePreviewEnvironmentPainter(),
+                                      ),
+
+                                      // 2. EŞYALAR — GERÇEKÇİ BOYUT, DERİNLİK VE TAM ZEMİNE BASAN DÜZEN
+                                      Positioned(
+                                        bottom: 8,
+                                        left: 8,
+                                        right: 8,
+                                        child: Stack(
+                                          alignment: Alignment.bottomCenter,
+                                          children: [
+                                            // KATMAN 3: En Arka Zemin Sırası
+                                            Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                              crossAxisAlignment: CrossAxisAlignment.end,
+                                              children: _currentUnit!.layer3Items.map((item) {
+                                                return Opacity(
+                                                  opacity: 0.75,
+                                                  child: Container(
+                                                    margin: const EdgeInsets.only(bottom: 6),
+                                                    child: Image.asset(
+                                                      item.spritePath,
+                                                      width: 36,
+                                                      height: 36,
+                                                      fit: BoxFit.contain,
+                                                      errorBuilder: (context, error, stackTrace) => Container(
+                                                        width: 32,
+                                                        height: 32,
+                                                        decoration: BoxDecoration(
+                                                          color: Colors.amber.withValues(alpha: 0.2),
+                                                          borderRadius: BorderRadius.circular(6),
+                                                          border: Border.all(color: Colors.amber, width: 1),
+                                                        ),
+                                                        child: const Icon(Icons.diamond, color: Colors.amber, size: 18),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                );
+                                              }).toList(),
+                                            ),
+
+                                            // KATMAN 2: Orta Zemin Sırası
+                                            Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                              crossAxisAlignment: CrossAxisAlignment.end,
+                                              children: _currentUnit!.layer2Items.map((item) {
+                                                final itemW = item.width >= 3 ? 75.0 : (item.width >= 2 ? 60.0 : 48.0);
+                                                final itemH = item.height >= 3 ? 70.0 : (item.height >= 2 ? 55.0 : 44.0);
+
+                                                return Opacity(
+                                                  opacity: 0.90,
+                                                  child: Container(
+                                                    margin: const EdgeInsets.only(bottom: 3),
+                                                    child: Image.asset(
+                                                      item.spritePath,
+                                                      width: itemW,
+                                                      height: itemH,
+                                                      fit: BoxFit.contain,
+                                                      errorBuilder: (context, error, stackTrace) => Container(
+                                                        width: itemW,
+                                                        height: itemH,
+                                                        decoration: BoxDecoration(
+                                                          color: Colors.white10,
+                                                          borderRadius: BorderRadius.circular(6),
+                                                          border: Border.all(color: Colors.white24),
+                                                        ),
+                                                        child: const Icon(Icons.inventory_2, color: Colors.white38, size: 24),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                );
+                                              }).toList(),
+                                            ),
+
+                                            // KATMAN 1: En Ön Zemin Sırası (Büyük Mobilya / Kasa / Sandık)
+                                            Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                              crossAxisAlignment: CrossAxisAlignment.end,
+                                              children: _currentUnit!.layer1Items.map((item) {
+                                                final itemW = item.width >= 4 ? 120.0 : (item.width >= 3 ? 95.0 : 75.0);
+                                                final itemH = item.height >= 3 ? 95.0 : (item.height >= 2 ? 80.0 : 60.0);
+
+                                                return Container(
+                                                  margin: const EdgeInsets.symmetric(horizontal: 2),
+                                                  child: Image.asset(
+                                                    item.spritePath,
+                                                    width: itemW,
+                                                    height: itemH,
+                                                    fit: BoxFit.contain,
+                                                    errorBuilder: (context, error, stackTrace) => Container(
+                                                      width: itemW,
+                                                      height: itemH,
+                                                      decoration: BoxDecoration(
+                                                        color: const Color(0xFF221F1B),
+                                                        borderRadius: BorderRadius.circular(8),
+                                                        border: Border.all(color: const Color(0xFF5A4D3B), width: 1.5),
+                                                      ),
+                                                      child: const Icon(Icons.archive, color: Colors.amber, size: 30),
+                                                    ),
+                                                  ),
+                                                );
+                                              }).toList(),
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                        children: _currentUnit!.layer3Items.map((item) {
-                                          return Image.asset(
-                                            item.spritePath,
-                                            width: 52,
-                                            height: 52,
-                                            fit: BoxFit.contain,
-                                            errorBuilder: (_, _, _) => const Icon(
-                                              Icons.inventory_2,
-                                              color: Colors.amber,
-                                              size: 36,
+                                    ],
+                                  ),
+                                ),
+
+                              // 3. Animasyonlu Metal Kepenk (Roller Shutter)
+                              AnimatedBuilder(
+                                animation: _shutterAnimation,
+                                builder: (context, child) {
+                                  return CustomPaint(
+                                    size: Size.infinite,
+                                    painter: _RollerShutterPainter(
+                                      progress: _shutterAnimation.value,
+                                    ),
+                                  );
+                                },
+                              ),
+
+                              // Bitiş Kaşesi (SATILDI / DEPO KAZANILDI)
+                              if (_phase == AuctionPhase.finished)
+                                Center(
+                                  child: AuctionStamp(
+                                    text: _playerWon ? 'DEPO KAZANILDI' : 'SATILDI',
+                                    color: _playerWon ? GameColors.profitGreen : GameColors.lossRed,
+                                    fontSize: 24,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // --- SAĞ %50: PAZARLIK KONSOLU (Solunda Spiker/Rakipler, Sağında Butonlar) ---
+                    Expanded(
+                      flex: 5,
+                      child: Container(
+                        margin: const EdgeInsets.only(left: 4, right: 10, bottom: 6),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // KONSOLUN SOLU: Müzayedeci Spiker & 3 Rakip Kartı (Yukarıdan Aşağıya)
+                            Expanded(
+                              flex: 5,
+                              child: Column(
+                                children: [
+                                  // Spiker & Müzayedeci Dan Anons Kutusu
+                                  DiegeticMetalPanel(
+                                    padding: const EdgeInsets.all(8),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          width: 38,
+                                          height: 38,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            border: Border.all(color: GameColors.gold, width: 2),
+                                          ),
+                                          child: ClipOval(
+                                            child: Image.asset(
+                                              GameAssetPaths.auctioneerDan,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (_, _, _) => const Text('🎙️', style: TextStyle(fontSize: 20)),
                                             ),
-                                          );
-                                        }).toList(),
-                                      ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'MÜZAYEDECİ DAN',
+                                                style: GameTypography.display(color: GameColors.gold, fontSize: 9),
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                _currentChant,
+                                                style: GameTypography.body(color: Colors.white, fontSize: 11),
+                                                maxLines: 3,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
+                                  const SizedBox(height: 6),
 
-                                  // Ön Zemin (Büyük Hacimli Parçalar - Katman 1)
+                                  // 3 Rakip Dikey Liste Kartları (Dave, Laura, Gus)
                                   Expanded(
-                                    flex: 6,
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                      crossAxisAlignment: CrossAxisAlignment.end,
-                                      children: _currentUnit!.layer1Items.map((item) {
-                                        return Image.asset(
-                                          item.spritePath,
-                                          width: 82,
-                                          height: 82,
-                                          fit: BoxFit.contain,
-                                          errorBuilder: (_, _, _) => const Icon(
-                                            Icons.weekend,
-                                            color: Colors.amber,
-                                            size: 55,
+                                    child: Column(
+                                      children: _bidders.map((b) {
+                                        final isLeader = _highestBidderName.contains(b.name);
+                                        final isOut = b.isDroppedOut;
+
+                                        return Expanded(
+                                          child: Opacity(
+                                            opacity: isOut ? 0.40 : 1.0,
+                                            child: Container(
+                                              margin: const EdgeInsets.only(bottom: 4),
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                              decoration: BoxDecoration(
+                                                color: isOut
+                                                    ? Colors.black54
+                                                    : (isLeader ? b.color.withValues(alpha: 0.25) : GameColors.panelDark),
+                                                borderRadius: BorderRadius.circular(8),
+                                                border: Border.all(
+                                                  color: isOut
+                                                      ? GameColors.lossRed
+                                                      : (isLeader ? b.color : GameColors.panelBorder),
+                                                  width: isLeader ? 2 : 1,
+                                                ),
+                                              ),
+                                              child: Row(
+                                                children: [
+                                                  if (b.imagePath != null)
+                                                    Container(
+                                                      width: 26,
+                                                      height: 26,
+                                                      margin: const EdgeInsets.only(right: 6),
+                                                      decoration: BoxDecoration(
+                                                        shape: BoxShape.circle,
+                                                        border: Border.all(color: isOut ? GameColors.lossRed : b.color),
+                                                      ),
+                                                      child: ClipOval(
+                                                        child: Image.asset(
+                                                          b.imagePath!,
+                                                          fit: BoxFit.cover,
+                                                          errorBuilder: (_, _, _) => Text(b.avatar, style: const TextStyle(fontSize: 14)),
+                                                        ),
+                                                      ),
+                                                    )
+                                                  else
+                                                    Text(b.avatar, style: const TextStyle(fontSize: 16)),
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      mainAxisAlignment: MainAxisAlignment.center,
+                                                      children: [
+                                                        Text(
+                                                          b.name,
+                                                          style: GameTypography.display(
+                                                            color: isOut ? Colors.white38 : (isLeader ? b.color : Colors.white),
+                                                            fontSize: 10,
+                                                          ),
+                                                          maxLines: 1,
+                                                          overflow: TextOverflow.ellipsis,
+                                                        ),
+                                                        Text(
+                                                          isOut ? 'PAS GEÇTİ' : (isLeader ? 'LİDER TEKLİF' : 'BEKLEMEDE'),
+                                                          style: GameTypography.body(
+                                                            color: isOut ? GameColors.lossRed : (isLeader ? GameColors.profitGreen : Colors.white54),
+                                                            fontSize: 9,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  if (isOut)
+                                                    Container(
+                                                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                                      decoration: BoxDecoration(
+                                                        color: GameColors.lossRed,
+                                                        borderRadius: BorderRadius.circular(3),
+                                                      ),
+                                                      child: const Text('PAS', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
+                                                    ),
+                                                ],
+                                              ),
+                                            ),
                                           ),
                                         );
                                       }).toList(),
@@ -490,269 +898,147 @@ class _LiveAuctionScreenState extends ConsumerState<LiveAuctionScreen>
                                 ],
                               ),
                             ),
-                          ),
+                            const SizedBox(width: 8),
 
-                        // Animasyonla Açılan Kepenk
-                        AnimatedBuilder(
-                          animation: _shutterAnimation,
-                          builder: (context, child) {
-                            final shutterHeightRatio = 1.0 - _shutterAnimation.value;
-                            return FractionallySizedBox(
-                              alignment: Alignment.topCenter,
-                              heightFactor: shutterHeightRatio,
-                              child: Container(
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFF242220),
-                                  border: Border(
-                                    bottom: BorderSide(
-                                      color: GameColors.hazardYellow,
-                                      width: 4,
+                            // KONSOLUN SAĞI: Sayaçlar & Teklif Butonları (Yukarıdan Aşağıya)
+                            Expanded(
+                              flex: 5,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  // Canlı Sayaç & Cüzdan Paneli
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: RetroLedDisplay(
+                                          label: 'CÜZDAN',
+                                          value: '$playerCash ₺',
+                                          ledColor: GameColors.profitGreen,
+                                          fontSize: 12,
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Expanded(
+                                        child: RetroLedDisplay(
+                                          label: 'SÜRE',
+                                          value: _phase == AuctionPhase.inspection ? '$_inspectionSeconds SN' : '$_biddingSeconds SN',
+                                          ledColor: _biddingSeconds <= 5 ? GameColors.lossRed : GameColors.neonCyan,
+                                          fontSize: 12,
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+
+                                  // Mevcut Teklif & Lider Rozeti
+                                  DiegeticMetalPanel(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                    borderColor: _isPlayerHighest ? GameColors.profitGreen : GameColors.gold,
+                                    borderWidth: 1.5,
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'EN YÜKSEK TEKLİF',
+                                              style: GameTypography.body(fontSize: 8, color: Colors.white60, fontWeight: FontWeight.bold),
+                                            ),
+                                            Text(
+                                              _highestBidderName,
+                                              style: GameTypography.display(
+                                                fontSize: 11,
+                                                color: _isPlayerHighest ? GameColors.profitGreen : GameColors.goldLight,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        RetroLedDisplay(
+                                          value: '$_currentBid ₺',
+                                          ledColor: _isPlayerHighest ? GameColors.profitGreen : GameColors.gold,
+                                          fontSize: 14,
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                ),
-                                child: Center(
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      const Icon(Icons.lock, color: GameColors.hazardYellow, size: 20),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        'HACİZLİ DEPO AÇILIYOR...',
-                                        style: GameTypography.display(
-                                          color: Colors.white,
-                                          fontSize: 13,
-                                          letterSpacing: 2,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
+                                  const Spacer(),
 
-                        // İhale Canlı Liderlik Rozeti
-                        if (_phase == AuctionPhase.bidding || _phase == AuctionPhase.finished)
-                          Positioned(
-                            bottom: 10,
-                            left: 14,
-                            right: 14,
-                            child: DiegeticMetalPanel(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                              backgroundColor: Colors.black.withValues(alpha: 0.9),
-                              borderColor: _isPlayerHighest
-                                  ? GameColors.profitGreen
-                                  : GameColors.gold,
-                              borderWidth: 2,
-                              glowColor: _isPlayerHighest ? GameColors.profitGreen : null,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        'EN YÜKSEK TEKLİF SAHİBİ',
-                                        style: GameTypography.body(
-                                          fontSize: 9,
-                                          color: Colors.white60,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        _highestBidderName,
-                                        style: GameTypography.display(
-                                          fontSize: 14,
-                                          color: _isPlayerHighest
-                                              ? GameColors.profitGreen
-                                              : GameColors.goldLight,
-                                        ),
+                                  // Hızlı Butonlar (Gözlem, Teklif veya Bitiş)
+                                  if (_phase == AuctionPhase.inspection) ...[
+                                    ArcadeButton(
+                                      text: 'TEKLİFE GEÇ ⏩',
+                                      icon: Icons.play_arrow,
+                                      onPressed: () {
+                                        _countdownTimer?.cancel();
+                                        _startBiddingPhase();
+                                      },
+                                      primaryColor: GameColors.gold,
+                                      shadowColor: const Color(0xFF8C711C),
+                                      height: 48,
+                                      fontSize: 11,
+                                    ),
+                                  ] else if (_phase == AuctionPhase.finished) ...[
+                                    ArcadeButton(
+                                      text: _playerWon ? 'DEPOYA GİRİLİYOR... 🔓' : 'YENİ İHALE 🔄',
+                                      icon: _playerWon ? Icons.door_front_door : Icons.refresh,
+                                      onPressed: () {
+                                        if (_playerWon) {
+                                          Navigator.of(context).pushReplacement(
+                                            MaterialPageRoute(
+                                              builder: (_) => StorageRaidScreen(storageUnit: _currentUnit),
+                                            ),
+                                          );
+                                        } else {
+                                          setState(() {
+                                            _isPlayerHighest = false;
+                                            _shutterController.reset();
+                                            _loadNewStorageUnit();
+                                          });
+                                        }
+                                      },
+                                      primaryColor: _playerWon ? GameColors.profitGreen : Colors.white24,
+                                      shadowColor: _playerWon ? const Color(0xFF00893E) : Colors.black45,
+                                      height: 48,
+                                      fontSize: 11,
+                                    ),
+                                  ] else ...[
+                                    // +50 ₺ Standart Teklif Pedalı
+                                    ArcadeButton(
+                                      text: '+50 ₺ BAS (${_currentBid + 50} ₺)',
+                                      icon: Icons.gavel,
+                                      onPressed: () => _playerBid(50),
+                                      primaryColor: GameColors.profitGreen,
+                                      shadowColor: const Color(0xFF00893E),
+                                      height: 44,
+                                      fontSize: 11,
+                                    ),
+                                    if (!_isScripted) ...[
+                                      const SizedBox(height: 6),
+                                      ArcadeButton(
+                                        text: '+150 ₺ BÜYÜK BAS',
+                                        icon: Icons.trending_up,
+                                        onPressed: () => _playerBid(150),
+                                        primaryColor: GameColors.alertOrange,
+                                        shadowColor: const Color(0xFFB24800),
+                                        height: 40,
+                                        fontSize: 10,
                                       ),
                                     ],
-                                  ),
-                                  RetroLedDisplay(
-                                    value: '$_currentBid ₺',
-                                    ledColor: _isPlayerHighest
-                                        ? GameColors.profitGreen
-                                        : GameColors.gold,
-                                    fontSize: 18,
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                  ),
+                                  ],
                                 ],
                               ),
                             ),
-                          ),
-
-                        // Bitiş Kaşesi (SATILDI)
-                        if (_phase == AuctionPhase.finished)
-                          Center(
-                            child: AuctionStamp(
-                              text: _playerWon ? 'DEPO KAZANILDI' : 'SATILDI',
-                              color: _playerWon ? GameColors.profitGreen : GameColors.lossRed,
-                              fontSize: 26,
-                            ),
-                          ),
-                      ],
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ),
-
-              const SizedBox(height: 6),
-              // Alt Sarı-Siyah Şerit
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 14),
-                child: HazardStripeBanner(height: 6),
-              ),
-
-              // 3. Spiker & Müzayedeci Anons Paneli
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                child: DiegeticMetalPanel(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: GameColors.gold, width: 2),
-                          boxShadow: [
-                            BoxShadow(
-                              color: GameColors.gold.withValues(alpha: 0.4),
-                              blurRadius: 8,
-                            ),
-                          ],
-                        ),
-                        child: ClipOval(
-                          child: Image.asset(
-                            GameAssetPaths.auctioneerDan,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => Container(
-                              color: GameColors.gold,
-                              child: const Center(
-                                child: Text('🎙️', style: TextStyle(fontSize: 22)),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _phase == AuctionPhase.inspection
-                                  ? 'MÜZAYEDE YÖNETİCİSİ • İNCELEME DİREKTİFİ'
-                                  : 'MÜZAYEDE YÖNETİCİSİ • CANLI ANONS',
-                              style: GameTypography.display(
-                                color: _phase == AuctionPhase.inspection
-                                    ? GameColors.neonCyan
-                                    : GameColors.gold,
-                                fontSize: 10,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              _currentChant,
-                              style: GameTypography.body(
-                                color: Colors.white,
-                                fontSize: 12,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              // 4. Rakiplerin Canlı Katılım Çubuğu
-              if (_phase == AuctionPhase.bidding || _phase == AuctionPhase.finished)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: _bidders.map((b) {
-                      final isLeader = _highestBidderName.contains(b.name);
-                      return Expanded(
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 3),
-                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: isLeader ? b.color.withValues(alpha: 0.25) : GameColors.panelDark,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: isLeader ? b.color : GameColors.panelBorder,
-                              width: isLeader ? 2 : 1,
-                            ),
-                            boxShadow: isLeader
-                                ? [
-                                    BoxShadow(
-                                      color: b.color.withValues(alpha: 0.4),
-                                      blurRadius: 8,
-                                    ),
-                                  ]
-                                : null,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              if (b.imagePath != null)
-                                Container(
-                                  width: 22,
-                                  height: 22,
-                                  margin: const EdgeInsets.only(right: 4),
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: b.color, width: 1),
-                                  ),
-                                  child: ClipOval(
-                                    child: Image.asset(
-                                      b.imagePath!,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (context, error, stackTrace) => Text(b.avatar, style: const TextStyle(fontSize: 14)),
-                                    ),
-                                  ),
-                                )
-                              else
-                                Text(b.avatar, style: const TextStyle(fontSize: 16)),
-                              Flexible(
-                                child: Text(
-                                  b.name.split(' ').first,
-                                  style: GameTypography.body(
-                                    color: isLeader ? b.color : Colors.white70,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-
-              const Spacer(),
-
-              // 5. Alt Aksiyon Paneli (Diegetik Teklif Konsolu)
-              if (_phase == AuctionPhase.inspection)
-                _buildInspectionActionPanel(playerCash)
-              else if (_phase == AuctionPhase.finished)
-                _buildAuctionResultPanel()
-              else
-                _buildPlayerBiddingControls(playerCash),
             ],
           ),
         ),
@@ -796,6 +1082,17 @@ class _LiveAuctionScreenState extends ConsumerState<LiveAuctionScreen>
 
   /// 3D Arcade Oyuncu Teklif Pedalları & Konsolu
   Widget _buildPlayerBiddingControls(int playerCash) {
+    String? guidePrompt;
+    if (_isScripted && !_isPlayerHighest) {
+      if (_scriptedStep == 0 && _currentBid == 150) {
+        guidePrompt = 'İlk teklifini (200 ₺) vererek açık artırmaya katıl!';
+      } else if (_scriptedStep == 1 && _currentBid == 300) {
+        guidePrompt = 'Rakipler bastırıyor! 350 ₺ basarak öne geç!';
+      } else if (_scriptedStep == 2 && _currentBid == 400) {
+        guidePrompt = 'Son hamle! 450 ₺ teklif ver ve depoyu kapat!';
+      }
+    }
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: const BoxDecoration(
@@ -810,6 +1107,12 @@ class _LiveAuctionScreenState extends ConsumerState<LiveAuctionScreen>
       ),
       child: Column(
         children: [
+          if (guidePrompt != null) ...[
+            GuideArrowSpotlight(
+              text: guidePrompt,
+            ),
+            const SizedBox(height: 8),
+          ],
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -845,21 +1148,22 @@ class _LiveAuctionScreenState extends ConsumerState<LiveAuctionScreen>
                   fontSize: 12,
                 ),
               ),
-              const SizedBox(width: 10),
-
-              // +150 ₺ Agresif Teklif Pedalı
-              Expanded(
-                flex: 2,
-                child: ArcadeButton(
-                  text: '+150 ₺ BÜYÜK BAS',
-                  icon: Icons.trending_up,
-                  onPressed: () => _playerBid(150),
-                  primaryColor: GameColors.alertOrange,
-                  shadowColor: const Color(0xFFB24800),
-                  height: 50,
-                  fontSize: 12,
+              if (!_isScripted) ...[
+                const SizedBox(width: 10),
+                // +150 ₺ Agresif Teklif Pedalı
+                Expanded(
+                  flex: 2,
+                  child: ArcadeButton(
+                    text: '+150 ₺ BÜYÜK BAS',
+                    icon: Icons.trending_up,
+                    onPressed: () => _playerBid(150),
+                    primaryColor: GameColors.alertOrange,
+                    shadowColor: const Color(0xFFB24800),
+                    height: 50,
+                    fontSize: 12,
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ],
@@ -919,7 +1223,7 @@ class _LiveAuctionScreenState extends ConsumerState<LiveAuctionScreen>
             onPressed: () {
               if (_playerWon) {
                 // Kazanılan AYNI depoya gir
-                Navigator.of(context).pushReplacement(
+                Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => StorageRaidScreen(storageUnit: _currentUnit),
                   ),
@@ -942,3 +1246,140 @@ class _LiveAuctionScreenState extends ConsumerState<LiveAuctionScreen>
     );
   }
 }
+
+/// Gerçekçi 3D Perspektif Depo İç Ortamı (Tavan, Yan Duvarlar, Arka Duvar, Beton Zemin ve Işık Huzmesi)
+class _StoragePreviewEnvironmentPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+
+    // 1. Tavan Bölgesi (Y: 0 -> h * 0.18)
+    final ceilingRect = Rect.fromLTWH(0, 0, w, h * 0.20);
+    final ceilingPaint = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFF1B1917), Color(0xFF282420)],
+      ).createShader(ceilingRect);
+    canvas.drawRect(ceilingRect, ceilingPaint);
+
+    // Tavan çelik kirişleri
+    final girderPaint = Paint()
+      ..color = const Color(0xFF141210)
+      ..strokeWidth = 3.0;
+    canvas.drawLine(Offset(0, h * 0.08), Offset(w, h * 0.08), girderPaint);
+    canvas.drawLine(Offset(0, h * 0.16), Offset(w, h * 0.16), girderPaint);
+
+    // 2. Arka Tuğla / Sac Duvar (Y: h * 0.18 -> h * 0.62)
+    final backWallRect = Rect.fromLTWH(w * 0.10, h * 0.18, w * 0.80, h * 0.44);
+    final backWallPaint = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFF2A241F), Color(0xFF1C1814)],
+      ).createShader(backWallRect);
+    canvas.drawRect(backWallRect, backWallPaint);
+
+    // Arka duvar tuğla/derz çizgileri
+    final brickPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.04)
+      ..strokeWidth = 1.0;
+    for (double y = h * 0.20; y < h * 0.62; y += 14) {
+      canvas.drawLine(Offset(w * 0.10, y), Offset(w * 0.90, y), brickPaint);
+    }
+
+    // 3. Sol Yan Duvar (Perspektif)
+    final leftWallPath = Path()
+      ..moveTo(0, 0)
+      ..lineTo(w * 0.10, h * 0.18)
+      ..lineTo(w * 0.10, h * 0.62)
+      ..lineTo(0, h)
+      ..close();
+    final leftWallPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
+        colors: [const Color(0xFF12100E), const Color(0xFF231E19)],
+      ).createShader(Rect.fromLTWH(0, 0, w * 0.10, h));
+    canvas.drawPath(leftWallPath, leftWallPaint);
+
+    // Sol Kepenk Rayı & Panelleri
+    final railPaint = Paint()
+      ..color = const Color(0xFF38322B)
+      ..strokeWidth = 2.5;
+    canvas.drawLine(Offset(w * 0.09, h * 0.18), Offset(w * 0.09, h * 0.62), railPaint);
+
+    // 4. Sağ Yan Duvar (Perspektif)
+    final rightWallPath = Path()
+      ..moveTo(w, 0)
+      ..lineTo(w * 0.90, h * 0.18)
+      ..lineTo(w * 0.90, h * 0.62)
+      ..lineTo(w, h)
+      ..close();
+    final rightWallPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.centerRight,
+        end: Alignment.centerLeft,
+        colors: [const Color(0xFF12100E), const Color(0xFF231E19)],
+      ).createShader(Rect.fromLTWH(w * 0.90, 0, w * 0.10, h));
+    canvas.drawPath(rightWallPath, rightWallPaint);
+
+    // Sağ Kepenk Rayı
+    canvas.drawLine(Offset(w * 0.91, h * 0.18), Offset(w * 0.91, h * 0.62), railPaint);
+
+    // 5. Beton Zemin (Y: h * 0.62 -> h)
+    final floorPath = Path()
+      ..moveTo(0, h)
+      ..lineTo(w * 0.10, h * 0.62)
+      ..lineTo(w * 0.90, h * 0.62)
+      ..lineTo(w, h)
+      ..close();
+    final floorPaint = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFF24201C), Color(0xFF110F0D)],
+      ).createShader(Rect.fromLTWH(0, h * 0.62, w, h * 0.38));
+    canvas.drawPath(floorPath, floorPaint);
+
+    // Zemin perspektif kılavuz çizgileri
+    final floorGridPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.035)
+      ..strokeWidth = 1.0;
+    canvas.drawLine(Offset(w * 0.30, h * 0.62), Offset(w * 0.20, h), floorGridPaint);
+    canvas.drawLine(Offset(w * 0.50, h * 0.62), Offset(w * 0.50, h), floorGridPaint);
+    canvas.drawLine(Offset(w * 0.70, h * 0.62), Offset(w * 0.80, h), floorGridPaint);
+
+    // 6. Tavandan Sarkan Endüstriyel Lamba & Sıcak Işık Konisi
+    final lightConePath = Path()
+      ..moveTo(w * 0.5, 0)
+      ..lineTo(w * 0.95, h)
+      ..lineTo(w * 0.05, h)
+      ..close();
+    final lightPaint = Paint()
+      ..shader = RadialGradient(
+        center: const Alignment(0, -1),
+        radius: 1.15,
+        colors: [
+          Colors.amber.withValues(alpha: 0.20),
+          Colors.amber.withValues(alpha: 0.06),
+          Colors.transparent,
+        ],
+        stops: const [0.0, 0.45, 1.0],
+      ).createShader(Rect.fromLTWH(0, 0, w, h));
+    canvas.drawPath(lightConePath, lightPaint);
+
+    // Lamba kablosu ve ampul
+    final lampCordPaint = Paint()
+      ..color = Colors.black
+      ..strokeWidth = 2.0;
+    canvas.drawLine(Offset(w * 0.5, 0), Offset(w * 0.5, 18), lampCordPaint);
+    final bulbGlowPaint = Paint()..color = Colors.amber;
+    canvas.drawCircle(Offset(w * 0.5, 20), 4.5, bulbGlowPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+

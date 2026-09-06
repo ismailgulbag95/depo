@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:yeni_oyun_sablon/core/theme/game_theme.dart';
 import 'package:yeni_oyun_sablon/core/widgets/arcade_button.dart';
 import 'package:yeni_oyun_sablon/core/widgets/auction_stamp.dart';
+import 'package:yeni_oyun_sablon/core/widgets/debug_console_sheet.dart';
 import 'package:yeni_oyun_sablon/core/widgets/diegetic_metal_panel.dart';
 import 'package:yeni_oyun_sablon/core/widgets/game_screen_shake.dart';
 import 'package:yeni_oyun_sablon/core/widgets/hazard_stripe_banner.dart';
@@ -74,6 +75,13 @@ class _DungeonHubScreenState extends ConsumerState<DungeonHubScreen>
                       ),
                     ),
                     const Spacer(),
+                    // 🛠️ Hızlı Debug Modu Butonu
+                    IconButton(
+                      tooltip: 'Geliştirici Test Modu',
+                      icon: const Icon(Icons.bug_report, color: GameColors.neonCyan, size: 22),
+                      onPressed: () => DebugConsoleSheet.show(context),
+                    ),
+                    const SizedBox(width: 4),
                     RetroLedDisplay(
                       label: 'İTİBAR',
                       value: '${playerProfile.reputation} XP',
@@ -185,10 +193,10 @@ class _DungeonHubScreenState extends ConsumerState<DungeonHubScreen>
       );
     }
 
-    final dungeons = [
-      (name: 'Terk Edilmiş Mahzen', diff: 60, time: 20, icon: Icons.door_sliding),
-      (name: 'Eski Maden Ocağı', diff: 120, time: 30, icon: Icons.terrain),
-      (name: 'Antik Kript & Mezarlık', diff: 220, time: 45, icon: Icons.account_balance),
+    final dungeons = const [
+      _DungeonLocationTpl('Terk Edilmiş Mahzen', 60, 20, Icons.door_sliding),
+      _DungeonLocationTpl('Eski Maden Ocağı', 120, 30, Icons.terrain),
+      _DungeonLocationTpl('Antik Kript & Mezarlık', 220, 45, Icons.account_balance),
     ];
 
     final readyMercs = state.mercenaries.where((m) => m.status == MercenaryStatus.ready).toList();
@@ -283,6 +291,31 @@ class _DungeonHubScreenState extends ConsumerState<DungeonHubScreen>
               style: GameTypography.body(color: Colors.white, fontSize: 11),
               textAlign: TextAlign.center,
             ),
+            if (res.unlockedDistrictTitle != null) ...[
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: GameColors.gold.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: GameColors.gold, width: 1.5),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.key, color: GameColors.gold, size: 16),
+                    const SizedBox(width: 6),
+                    Text(
+                      'YENİ İHALE AÇILDI: ${res.unlockedDistrictTitle}',
+                      style: GameTypography.display(
+                        color: GameColors.goldLight,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -427,3 +460,12 @@ class _DungeonHubScreenState extends ConsumerState<DungeonHubScreen>
     );
   }
 }
+
+class _DungeonLocationTpl {
+  final String name;
+  final int diff;
+  final int time;
+  final IconData icon;
+  const _DungeonLocationTpl(this.name, this.diff, this.time, this.icon);
+}
+

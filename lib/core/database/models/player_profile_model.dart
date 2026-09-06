@@ -8,6 +8,11 @@ class PlayerProfileModel {
   int activeVehicleId;
   int maxStorageSlots;
   List<int> shopStorageItemIds;
+  List<int> homeStorageItemIds; // Sınırsız Ev Deposu
+  List<int> shopShowcaseItemIds; // Dükkan Vitrinindeki Eşyalar
+  int ownedHomeTier; // 1: Garajlı Daire (Max 2 NPC), 2: Müstakil (Max 4), 3: Çiftlik (Max 6), 4: Malikane (Max 10)
+  List<int> ownedVehicleIds; // 1: Pikap, 2: Van, 3: Kamyonet, 4: Tır
+  List<String> unlockedDistricts; // Açık depo bölgeleri: 'mechanic', 'home', 'art', 'military', 'luxury'
 
   PlayerProfileModel({
     required this.id,
@@ -16,6 +21,11 @@ class PlayerProfileModel {
     this.activeVehicleId = 1,
     this.maxStorageSlots = GameConstants.initialShopStorageSlots,
     this.shopStorageItemIds = const [],
+    this.homeStorageItemIds = const [],
+    this.shopShowcaseItemIds = const [],
+    this.ownedHomeTier = 1,
+    this.ownedVehicleIds = const [1],
+    this.unlockedDistricts = const ['mechanic'],
   });
 
   Map<String, dynamic> toMap() {
@@ -26,6 +36,11 @@ class PlayerProfileModel {
       'activeVehicleId': activeVehicleId,
       'maxStorageSlots': maxStorageSlots,
       'shopStorageItemIds': shopStorageItemIds,
+      'homeStorageItemIds': homeStorageItemIds,
+      'shopShowcaseItemIds': shopShowcaseItemIds,
+      'ownedHomeTier': ownedHomeTier,
+      'ownedVehicleIds': ownedVehicleIds,
+      'unlockedDistricts': unlockedDistricts,
     };
   }
 
@@ -40,6 +55,23 @@ class PlayerProfileModel {
               ?.map((e) => (e as num).toInt())
               .toList() ??
           [],
+      homeStorageItemIds: (map['homeStorageItemIds'] as List<dynamic>?)
+              ?.map((e) => (e as num).toInt())
+              .toList() ??
+          [],
+      shopShowcaseItemIds: (map['shopShowcaseItemIds'] as List<dynamic>?)
+              ?.map((e) => (e as num).toInt())
+              .toList() ??
+          [],
+      ownedHomeTier: (map['ownedHomeTier'] as num?)?.toInt() ?? 1,
+      ownedVehicleIds: (map['ownedVehicleIds'] as List<dynamic>?)
+              ?.map((e) => (e as num).toInt())
+              .toList() ??
+          [1],
+      unlockedDistricts: (map['unlockedDistricts'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          ['mechanic'],
     );
   }
 }

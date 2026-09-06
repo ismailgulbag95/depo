@@ -22,6 +22,15 @@ class GameAssetPaths {
   static const String bgAuctionYard = 'assets/backgrounds/bg_auction_yard.jpg';
   static const String bgWorkshopGarage = 'assets/backgrounds/bg_workshop_garage.jpg';
   static const String bgMarketplaceStore = 'assets/backgrounds/bg_marketplace_store.jpg';
+  static const String bgHomeWorkshop = 'assets/backgrounds/bg_home_workshop.jpg';
+  static const String bgTavernPanoramic = 'assets/backgrounds/bg_tavern_panoramic.jpg';
+  static const String bgCityMapTactical = 'assets/backgrounds/bg_city_map_tactical.jpg';
+  static const String bgBarracksEmpty = 'assets/backgrounds/bg_barracks_empty.jpg';
+  static const String bgBarracksWarrior = 'assets/backgrounds/bg_barracks_warrior.jpg';
+  static const String bgBarracksAssassin = 'assets/backgrounds/bg_barracks_assassin.jpg';
+  static const String bgBarracksArcher = 'assets/backgrounds/bg_barracks_archer.jpg';
+  static const String bgBarracksMage = 'assets/backgrounds/bg_barracks_mage.jpg';
+  static const String bgBarracksKnight = 'assets/backgrounds/bg_barracks_knight.jpg';
 
   /// Rakip ismine göre uygun karakter portresini döner
   static String getRivalAvatar(String rivalName) {

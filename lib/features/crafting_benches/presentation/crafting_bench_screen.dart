@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:yeni_oyun_sablon/core/database/database_service.dart';
 import 'package:yeni_oyun_sablon/core/database/models/item_model.dart';
 import 'package:yeni_oyun_sablon/core/localization/localization_service.dart';
 import 'package:yeni_oyun_sablon/core/theme/game_theme.dart';
@@ -15,9 +16,14 @@ import 'package:yeni_oyun_sablon/features/marketplace/presentation/marketplace_s
 
 /// Atölye ve Dokunsal Eşya Restorasyon Ekranı (ADR-028)
 class CraftingBenchScreen extends ConsumerStatefulWidget {
-  final ItemModel initialItem;
+  final ItemModel? initialItem;
+  final int initialTab;
 
-  const CraftingBenchScreen({super.key, required this.initialItem});
+  const CraftingBenchScreen({
+    super.key,
+    this.initialItem,
+    this.initialTab = 0,
+  });
 
   @override
   ConsumerState<CraftingBenchScreen> createState() => _CraftingBenchScreenState();
@@ -29,8 +35,15 @@ class _CraftingBenchScreenState extends ConsumerState<CraftingBenchScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(craftingBenchProvider.notifier).setBenchItem(widget.initialItem);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (widget.initialItem != null) {
+        ref.read(craftingBenchProvider.notifier).setBenchItem(widget.initialItem!);
+      } else {
+        final allItems = await DatabaseService.instance.getAllItems();
+        if (allItems.isNotEmpty) {
+          ref.read(craftingBenchProvider.notifier).setBenchItem(allItems.first);
+        }
+      }
     });
   }
 
@@ -39,6 +52,13 @@ class _CraftingBenchScreenState extends ConsumerState<CraftingBenchScreen> {
     final benchState = ref.watch(craftingBenchProvider);
     final lang = ref.watch(languageProvider);
     final item = benchState.activeItem ?? widget.initialItem;
+
+    if (item == null) {
+      return const Scaffold(
+        backgroundColor: GameColors.background,
+        body: Center(child: CircularProgressIndicator(color: GameColors.gold)),
+      );
+    }
 
     final progressPercent = (benchState.cleaningProgress * 100).toInt();
 

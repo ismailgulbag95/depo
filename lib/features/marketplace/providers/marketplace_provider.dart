@@ -119,11 +119,11 @@ class MarketplaceNotifier extends StateNotifier<MarketplaceState> {
       return;
     }
 
-    final customers = [
-      (name: 'Koleksiyoncu Selim', avatar: '🧐', factor: 0.95, phrase: 'Bunu uzun süredir arıyordum. Biraz indirim yaparsan hemen nakit alırım!'),
-      (name: 'Hurdacı Rıza', avatar: '🧢', factor: 0.70, phrase: 'Bu parçanın piyasası düştü usta. İşimizi görsün diye şu kadar veririm.'),
-      (name: 'Antikacı Melahat', avatar: '🕶️', factor: 0.90, phrase: 'Restorasyonu fena değil, vitrinime koyarım. Anlaşırsak el sıkışalım.'),
-      (name: 'Tüccar Kenan', avatar: '💼', factor: 0.85, phrase: 'Toplu alım yapıyorum, son fiyata bırakırsan hemen kasadan ödeyeyim.'),
+    final customers = const [
+      _MarketCustomerTpl('Koleksiyoncu Selim', '🧐', 0.95, 'Bunu uzun süredir arıyordum. Biraz indirim yaparsan hemen nakit alırım!'),
+      _MarketCustomerTpl('Hurdacı Rıza', '🧢', 0.70, 'Bu parçanın piyasası düştü usta. İşimizi görsün diye şu kadar veririm.'),
+      _MarketCustomerTpl('Antikacı Melahat', '🕶️', 0.90, 'Restorasyonu fena değil, vitrinime koyarım. Anlaşırsak el sıkışalım.'),
+      _MarketCustomerTpl('Tüccar Kenan', '💼', 0.85, 'Toplu alım yapıyorum, son fiyata bırakırsan hemen kasadan ödeyeyim.'),
     ];
 
     final chosen = customers[_rnd.nextInt(customers.length)];
@@ -172,3 +172,12 @@ final marketplaceProvider =
     StateNotifierProvider<MarketplaceNotifier, MarketplaceState>((ref) {
   return MarketplaceNotifier(ref);
 });
+
+class _MarketCustomerTpl {
+  final String name;
+  final String avatar;
+  final double factor;
+  final String phrase;
+  const _MarketCustomerTpl(this.name, this.avatar, this.factor, this.phrase);
+}
+

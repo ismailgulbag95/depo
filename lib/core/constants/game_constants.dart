@@ -28,8 +28,8 @@ enum ItemCategory {
 enum VehicleTemplate {
   pickup(
     name: 'Eski Pikap',
-    gridWidth: 8,
-    gridHeight: 12,
+    gridWidth: 10,
+    gridHeight: 6,
     maxWeightKg: 350.0,
     upgradeCost: 0,
   ),

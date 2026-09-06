@@ -25,6 +25,7 @@ class StorageRaidGame extends FlameGame {
 
   double _timerAcc = 0.0;
   bool isRaidActive = true;
+  bool isTimerPaused = true; // Araç sağdan gelip park edene kadar sayaç duraklatılır
 
   RaidItemComponent? selectedItem;
   final List<RaidItemComponent> _activeRaidItems = [];
@@ -44,91 +45,124 @@ class StorageRaidGame extends FlameGame {
     await _populatePhysicalItems();
   }
 
+  bool showDebugGrid = false;
+
+  void toggleDebugGrid() {
+    showDebugGrid = !showDebugGrid;
+    for (final comp in _activeRaidItems) {
+      comp.showDebugGrid = showDebugGrid;
+    }
+  }
+
   /// Gerçekçi depo ortamı: Tuğla duvar, beton zemin ve ışık huzmesi
   void _buildRealisticWarehouseEnvironment() {
     final wallComponent = CustomPainterComponent(
-      painter: _RealisticWarehousePainter(),
+      painter: _RealisticWarehousePainter(game: this),
       size: size,
     );
     add(wallComponent);
   }
 
-  /// Eşyaları havada süzülmeden, fiziksel zemin ve raf çizgilerine "ayak basacak" şekilde yerleştirir
+  /// Eşyaları ASLA havada uçurmadan, doğrudan deponun beton zeminine ve 12 sütunluk ızgaraya göre yerleştirir
   Future<void> _populatePhysicalItems() async {
     final w = size.x;
     final h = size.y;
 
-    // 1. KATMAN 3: Arka Çelik Raf Üstü (Üst Seviye Y: h * 0.40)
-    // Boyut: 60x60 px (Küçük / Değerli / Antika)
-    // Anchor: Anchor.bottomCenter (Eşyanın altı raf çizgisine tam oturur)
+    // 12 Sütunlu Depo Zemin Izgara Birimi
+    final gridUnitW = w / 12.0;
+    final gridUnitH = h / 8.5;
+
+    // Katman Zemin Taban Çizgileri (2.5D Derinlik Perspektifi)
+    final l3GroundY = h * 0.82; // Arka Sıra
+    final l2GroundY = h * 0.88; // Orta Sıra
+    final l1GroundY = h * 0.94; // Ön Sıra
+
+    // 1. KATMAN 3: En Arka Zemin Sırası (Küçük & Değerli Eşyalar - Altın, Mücevher, Saatler)
     final l3 = storageUnit.layer3Items;
     final l3Spacing = w / (l3.length + 1);
     for (int i = 0; i < l3.length; i++) {
       final item = l3[i];
       Sprite? sprite;
       try {
-        sprite = await loadSprite(item.spritePath);
+        final spritePath = item.spritePath.startsWith('assets/')
+            ? item.spritePath.substring(7)
+            : item.spritePath;
+        sprite = await loadSprite(spritePath);
       } catch (_) {}
+
+      // Izgaraya göre boyutlandırma (Genişlik: item.width * gridUnitW, Yükseklik: item.height * gridUnitH)
+      final itemW = (item.width * gridUnitW * 0.75).clamp(38.0, w * 0.25);
+      final itemH = (item.height * gridUnitH * 0.85).clamp(38.0, h * 0.30);
 
       final comp = RaidItemComponent(
         itemModel: item,
         layer: 3,
-        shadowOpacity: 1.0, // Zifiri karanlık
-        position: Vector2((i + 1) * l3Spacing, h * 0.40),
-        size: Vector2(62, 62),
+        shadowOpacity: 1.0, // Zifiri karanlık siluet
+        position: Vector2((i + 1) * l3Spacing, l3GroundY),
+        size: Vector2(itemW, itemH),
         sprite: sprite,
         onSelected: _handleItemTap,
-      );
+      )..showDebugGrid = showDebugGrid;
       add(comp);
       _activeRaidItems.add(comp);
     }
 
-    // 2. KATMAN 2: Orta Zemin Hattı (Orta Seviye Y: h * 0.65)
-    // Boyut: 95x95 px (Kutular, Aletler, Elektronikler)
-    // Anchor: Anchor.bottomCenter (Orta zemin hattına oturur)
+    // 2. KATMAN 2: Orta Zemin Sırası (Kutular, Aletler, Elektronikler, Müzik Aletleri)
     final l2 = storageUnit.layer2Items;
     final l2Spacing = w / (l2.length + 1);
     for (int i = 0; i < l2.length; i++) {
       final item = l2[i];
       Sprite? sprite;
       try {
-        sprite = await loadSprite(item.spritePath);
+        final spritePath = item.spritePath.startsWith('assets/')
+            ? item.spritePath.substring(7)
+            : item.spritePath;
+        sprite = await loadSprite(spritePath);
       } catch (_) {}
+
+      // Izgaraya göre boyutlandırma
+      final itemW = (item.width * gridUnitW * 1.05).clamp(55.0, w * 0.35);
+      final itemH = (item.height * gridUnitH * 1.15).clamp(60.0, h * 0.45);
 
       final comp = RaidItemComponent(
         itemModel: item,
         layer: 2,
         shadowOpacity: 0.75, // %75 koyu siluet
-        position: Vector2((i + 1) * l2Spacing, h * 0.65),
-        size: Vector2(95, 95),
+        position: Vector2((i + 1) * l2Spacing, l2GroundY),
+        size: Vector2(itemW, itemH),
         sprite: sprite,
         onSelected: _handleItemTap,
-      );
+      )..showDebugGrid = showDebugGrid;
       add(comp);
       _activeRaidItems.add(comp);
     }
 
-    // 3. KATMAN 1: Ön Zemin Tabanı (En Yakın Y: h * 0.92)
-    // Boyut: 135x135 px (Büyük Hacimli Koltuk, Buzdolabı, Jeneratör)
-    // Anchor: Anchor.bottomCenter (Doğrudan beton zemine basar)
+    // 3. KATMAN 1: En Ön Zemin Sırası (Büyük Mobilyalar, Kanepe, Buzdolabı, V8 Motor, Gardırop)
     final l1 = storageUnit.layer1Items;
     final l1Spacing = w / (l1.length + 1);
     for (int i = 0; i < l1.length; i++) {
       final item = l1[i];
       Sprite? sprite;
       try {
-        sprite = await loadSprite(item.spritePath);
+        final spritePath = item.spritePath.startsWith('assets/')
+            ? item.spritePath.substring(7)
+            : item.spritePath;
+        sprite = await loadSprite(spritePath);
       } catch (_) {}
+
+      // Izgaraya göre boyutlandırma (Ön sıra heybetli boyut)
+      final itemW = (item.width * gridUnitW * 1.35).clamp(90.0, w * 0.48);
+      final itemH = (item.height * gridUnitH * 1.45).clamp(95.0, h * 0.60);
 
       final comp = RaidItemComponent(
         itemModel: item,
         layer: 1,
         shadowOpacity: 0.0, // Tamamen net
-        position: Vector2((i + 1) * l1Spacing, h * 0.92),
-        size: Vector2(135, 135),
+        position: Vector2((i + 1) * l1Spacing, l1GroundY),
+        size: Vector2(itemW, itemH),
         sprite: sprite,
         onSelected: _handleItemTap,
-      );
+      )..showDebugGrid = showDebugGrid;
       add(comp);
       _activeRaidItems.add(comp);
     }
@@ -175,7 +209,7 @@ class StorageRaidGame extends FlameGame {
   @override
   void update(double dt) {
     super.update(dt);
-    if (!isRaidActive) return;
+    if (!isRaidActive || isTimerPaused) return;
 
     _timerAcc += dt;
     if (_timerAcc >= 1.0) {
@@ -189,6 +223,10 @@ class StorageRaidGame extends FlameGame {
     }
   }
 
+  void addExtraTime(int seconds) {
+    remainingSeconds.value += seconds;
+  }
+
   void finishRaid() {
     if (!isRaidActive) return;
     isRaidActive = false;
@@ -198,82 +236,150 @@ class StorageRaidGame extends FlameGame {
   List<ItemModel> getRemainingItems() {
     return _activeRaidItems.map((e) => e.itemModel).toList();
   }
+
+  List<ItemModel> getAllActiveItemModels() {
+    return _activeRaidItems.map((e) => e.itemModel).toList();
+  }
+
+  List<RaidItemComponent> getActiveComponents() {
+    return List.unmodifiable(_activeRaidItems);
+  }
 }
 
-/// Gerçekçi Endüstriyel Depo Arka Planı (Beton Zemin, Tuğla Duvar, Işık Huzmesi)
+/// Gerçekçi 3D Perspektif Depo Ortamı (Tavan, Yan Duvarlar, Arka Duvar, Beton Zemin ve Işık Huzmesi)
 class _RealisticWarehousePainter extends CustomPainter {
+  final StorageRaidGame? game;
+
+  _RealisticWarehousePainter({this.game});
+
   @override
   void paint(Canvas canvas, Size size) {
     final w = size.width;
     final h = size.height;
 
-    // 1. Arka Tuğla / Metal Duvar (0 -> h * 0.65)
-    final wallRect = Rect.fromLTWH(0, 0, w, h * 0.65);
-    final wallPaint = Paint()
+    // 1. Tavan Bölgesi (Y: 0 -> h * 0.18)
+    final ceilingRect = Rect.fromLTWH(0, 0, w, h * 0.20);
+    final ceilingPaint = Paint()
       ..shader = const LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [Color(0xFF28231E), Color(0xFF191613)],
-      ).createShader(wallRect);
-    canvas.drawRect(wallRect, wallPaint);
+        colors: [Color(0xFF191715), Color(0xFF26221E)],
+      ).createShader(ceilingRect);
+    canvas.drawRect(ceilingRect, ceilingPaint);
 
-    // Tuğla derz çizgileri
-    final brickLinePaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.035)
+    // Tavan çelik kirişleri
+    final girderPaint = Paint()
+      ..color = const Color(0xFF141210)
+      ..strokeWidth = 3.0;
+    canvas.drawLine(Offset(0, h * 0.08), Offset(w, h * 0.08), girderPaint);
+    canvas.drawLine(Offset(0, h * 0.16), Offset(w, h * 0.16), girderPaint);
+
+    // 2. Arka Tuğla / Sac Duvar (Y: h * 0.18 -> h * 0.62)
+    final backWallRect = Rect.fromLTWH(w * 0.08, h * 0.18, w * 0.84, h * 0.44);
+    final backWallPaint = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFF2A241F), Color(0xFF1B1713)],
+      ).createShader(backWallRect);
+    canvas.drawRect(backWallRect, backWallPaint);
+
+    // Arka duvar tuğla/derz çizgileri
+    final brickPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.04)
       ..strokeWidth = 1.0;
-    for (double y = 10; y < h * 0.65; y += 18) {
-      canvas.drawLine(Offset(0, y), Offset(w, y), brickLinePaint);
+    for (double y = h * 0.20; y < h * 0.62; y += 14) {
+      canvas.drawLine(Offset(w * 0.08, y), Offset(w * 0.92, y), brickPaint);
     }
 
-    // 2. Arka Çelik Raf (Y: h * 0.40)
-    final shelfRect = Rect.fromLTWH(0, h * 0.40, w, 8);
-    final shelfPaint = Paint()..color = const Color(0xFF3E362E);
-    canvas.drawRect(shelfRect, shelfPaint);
-    // Raf destek kolonları
-    final shelfLegPaint = Paint()..color = const Color(0xFF2B251F);
-    canvas.drawRect(
-      Rect.fromLTWH(w * 0.25, h * 0.40, 8, h * 0.25),
-      shelfLegPaint,
-    );
-    canvas.drawRect(
-      Rect.fromLTWH(w * 0.75, h * 0.40, 8, h * 0.25),
-      shelfLegPaint,
-    );
-
-    // 3. Perspektifli Beton Zemin (h * 0.65 -> h)
-    final floorPath = Path()
-      ..moveTo(0, h * 0.65)
-      ..lineTo(w, h * 0.65)
-      ..lineTo(w, h)
+    // 3. Sol Yan Duvar (Perspektif)
+    final leftWallPath = Path()
+      ..moveTo(0, 0)
+      ..lineTo(w * 0.08, h * 0.18)
+      ..lineTo(w * 0.08, h * 0.62)
       ..lineTo(0, h)
       ..close();
+    final leftWallPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
+        colors: [const Color(0xFF100E0C), const Color(0xFF221D18)],
+      ).createShader(Rect.fromLTWH(0, 0, w * 0.08, h));
+    canvas.drawPath(leftWallPath, leftWallPaint);
 
+    // Sol Kepenk Rayı
+    final railPaint = Paint()
+      ..color = const Color(0xFF38322B)
+      ..strokeWidth = 2.5;
+    canvas.drawLine(Offset(w * 0.075, h * 0.18), Offset(w * 0.075, h * 0.62), railPaint);
+
+    // 4. Sağ Yan Duvar (Perspektif)
+    final rightWallPath = Path()
+      ..moveTo(w, 0)
+      ..lineTo(w * 0.92, h * 0.18)
+      ..lineTo(w * 0.92, h * 0.62)
+      ..lineTo(w, h)
+      ..close();
+    final rightWallPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.centerRight,
+        end: Alignment.centerLeft,
+        colors: [const Color(0xFF100E0C), const Color(0xFF221D18)],
+      ).createShader(Rect.fromLTWH(w * 0.92, 0, w * 0.08, h));
+    canvas.drawPath(rightWallPath, rightWallPaint);
+
+    // Sağ Kepenk Rayı
+    canvas.drawLine(Offset(w * 0.925, h * 0.18), Offset(w * 0.925, h * 0.62), railPaint);
+
+    // 5. Arka Çelik Raf (Y: h * 0.40)
+    final shelfRect = Rect.fromLTWH(w * 0.08, h * 0.40, w * 0.84, 8);
+    final shelfPaint = Paint()..color = const Color(0xFF3E362E);
+    canvas.drawRect(shelfRect, shelfPaint);
+    final shelfLegPaint = Paint()..color = const Color(0xFF2B251F);
+    canvas.drawRect(Rect.fromLTWH(w * 0.28, h * 0.40, 8, h * 0.22), shelfLegPaint);
+    canvas.drawRect(Rect.fromLTWH(w * 0.72, h * 0.40, 8, h * 0.22), shelfLegPaint);
+
+    // 6. Beton Zemin (Y: h * 0.62 -> h)
+    final floorPath = Path()
+      ..moveTo(0, h)
+      ..lineTo(w * 0.08, h * 0.62)
+      ..lineTo(w * 0.92, h * 0.62)
+      ..lineTo(w, h)
+      ..close();
     final floorPaint = Paint()
       ..shader = const LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [Color(0xFF201D1A), Color(0xFF0F0E0C)],
-      ).createShader(Rect.fromLTWH(0, h * 0.65, w, h * 0.35));
+        colors: [Color(0xFF24201C), Color(0xFF100F0D)],
+      ).createShader(Rect.fromLTWH(0, h * 0.62, w, h * 0.38));
     canvas.drawPath(floorPath, floorPaint);
 
-    // 4. Sarı-Siyah Endüstriyel Tehlike Şeridi (Zemin Başlangıcı Y: h * 0.65)
+    // Zemin kılavuz çizgileri
+    final floorGridPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.035)
+      ..strokeWidth = 1.0;
+    canvas.drawLine(Offset(w * 0.30, h * 0.62), Offset(w * 0.20, h), floorGridPaint);
+    canvas.drawLine(Offset(w * 0.50, h * 0.62), Offset(w * 0.50, h), floorGridPaint);
+    canvas.drawLine(Offset(w * 0.70, h * 0.62), Offset(w * 0.80, h), floorGridPaint);
+
+    // 7. Sarı-Siyah Endüstriyel Tehlike Şeridi (Zemin Başlangıcı Y: h * 0.62)
     final hazardPaint = Paint()..strokeWidth = 3.0;
     for (double x = 0; x < w; x += 16) {
       hazardPaint.color = (x ~/ 16) % 2 == 0
           ? const Color(0xFFD4AF37).withValues(alpha: 0.4)
           : Colors.black.withValues(alpha: 0.5);
       canvas.drawLine(
-        Offset(x, h * 0.65),
-        Offset(x + 10, h * 0.65 + 6),
+        Offset(x, h * 0.62),
+        Offset(x + 10, h * 0.62 + 6),
         hazardPaint,
       );
     }
 
-    // 5. Tavandan Sarkan Endüstriyel Ampul ve Sıcak Işık Huzmesi
+    // 8. Tavandan Sarkan Endüstriyel Ampul ve Sıcak Işık Huzmesi
     final lightConePath = Path()
       ..moveTo(w * 0.5, 0)
-      ..lineTo(w * 0.9, h)
-      ..lineTo(w * 0.1, h)
+      ..lineTo(w * 0.95, h)
+      ..lineTo(w * 0.05, h)
       ..close();
 
     final lightPaint = Paint()
@@ -281,11 +387,11 @@ class _RealisticWarehousePainter extends CustomPainter {
         center: const Alignment(0, -1),
         radius: 1.2,
         colors: [
-          Colors.amber.withValues(alpha: 0.18),
+          Colors.amber.withValues(alpha: 0.20),
           Colors.amber.withValues(alpha: 0.06),
           Colors.transparent,
         ],
-        stops: const [0.0, 0.5, 1.0],
+        stops: const [0.0, 0.48, 1.0],
       ).createShader(Rect.fromLTWH(0, 0, w, h));
     canvas.drawPath(lightConePath, lightPaint);
 
@@ -296,8 +402,48 @@ class _RealisticWarehousePainter extends CustomPainter {
     canvas.drawLine(Offset(w * 0.5, 0), Offset(w * 0.5, 20), cordPaint);
     final bulbPaint = Paint()..color = Colors.amber;
     canvas.drawCircle(Offset(w * 0.5, 24), 5, bulbPaint);
+
+    // 9. DEBUG GRID MODU: 12 Sütun ve 3 Katman Derinlik Izgarası (Debug Modunda Görünür)
+    if (game?.showDebugGrid == true) {
+      final gridPaint = Paint()
+        ..color = Colors.cyanAccent.withValues(alpha: 0.45)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.0;
+
+      // 12 Dikey Sütun
+      final colWidth = w / 12.0;
+      for (int c = 0; c <= 12; c++) {
+        final x = c * colWidth;
+        canvas.drawLine(Offset(x, h * 0.62), Offset(x, h), gridPaint);
+      }
+
+      // 3 Yatay Katman Çizgisi
+      final l3Y = h * 0.82;
+      final l2Y = h * 0.88;
+      final l1Y = h * 0.94;
+
+      final layerPaint = Paint()
+        ..color = Colors.amberAccent.withValues(alpha: 0.55)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.2;
+
+      canvas.drawLine(Offset(0, l3Y), Offset(w, l3Y), layerPaint);
+      canvas.drawLine(Offset(0, l2Y), Offset(w, l2Y), layerPaint);
+      canvas.drawLine(Offset(0, l1Y), Offset(w, l1Y), layerPaint);
+
+      final tp = TextPainter(
+        text: const TextSpan(
+          text: '📐 DEPO IZGARASI (12 SÜTUN x 3 KATMAN DERİNLİK)',
+          style: TextStyle(color: Colors.cyanAccent, fontSize: 9, fontWeight: FontWeight.bold),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      tp.paint(canvas, Offset(10, h * 0.63));
+    }
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _RealisticWarehousePainter oldDelegate) {
+    return oldDelegate.game?.showDebugGrid != game?.showDebugGrid;
+  }
 }

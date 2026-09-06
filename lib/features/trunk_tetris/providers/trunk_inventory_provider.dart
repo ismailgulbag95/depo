@@ -96,7 +96,16 @@ class TrunkInventoryNotifier extends StateNotifier<TrunkInventoryState> {
     try {
       final vehicle = await DatabaseService.instance.getActiveVehicle();
       if (vehicle != null) {
-        var grid = BitboardEngine.createEmptyGrid(vehicle.gridHeight);
+        int gWidth = vehicle.gridWidth;
+        int gHeight = vehicle.gridHeight;
+        if (vehicle.name == VehicleTemplate.pickup.name && (gWidth != 10 || gHeight != 6)) {
+          gWidth = 10;
+          gHeight = 6;
+          vehicle.gridWidth = 10;
+          vehicle.gridHeight = 6;
+          DatabaseService.instance.saveVehicle(vehicle);
+        }
+        var grid = BitboardEngine.createEmptyGrid(gHeight);
         double totalWeight = 0.0;
 
         for (final placer in vehicle.placedItems) {
@@ -118,8 +127,8 @@ class TrunkInventoryNotifier extends StateNotifier<TrunkInventoryState> {
         state = TrunkInventoryState(
           vehicleId: vehicle.id,
           vehicleName: vehicle.name,
-          gridWidth: vehicle.gridWidth,
-          gridHeight: vehicle.gridHeight,
+          gridWidth: gWidth,
+          gridHeight: gHeight,
           maxWeightKg: vehicle.maxWeightKg,
           currentWeightKg: totalWeight,
           gridRows: grid,
@@ -258,7 +267,7 @@ class TrunkInventoryNotifier extends StateNotifier<TrunkInventoryState> {
   }
 
   /// Belirtilen hücreye denk gelen yerleşmiş eşyayı bulur, ızgaradan kaldırır ve ItemModel olarak döndürür
-  Future<({ItemModel item, int rotation})?> popItemAt(int x, int y) async {
+  Future<PoppedTrunkItem?> popItemAt(int x, int y) async {
     for (int i = 0; i < state.placedItems.length; i++) {
       final placer = state.placedItems[i];
       if (placer.itemId == null || placer.gridX == null || placer.gridY == null) continue;
@@ -279,7 +288,7 @@ class TrunkInventoryNotifier extends StateNotifier<TrunkInventoryState> {
             if (cellX == x && cellY == y) {
               // Eşya bulundu! Izgaradan kaldır ve döndür
               await removeItem(item.id);
-              return (item: item, rotation: placer.rotation ?? 0);
+              return PoppedTrunkItem(item: item, rotation: placer.rotation ?? 0);
             }
           }
         }
@@ -319,3 +328,10 @@ final trunkInventoryProvider =
     StateNotifierProvider<TrunkInventoryNotifier, TrunkInventoryState>((ref) {
   return TrunkInventoryNotifier();
 });
+
+class PoppedTrunkItem {
+  final ItemModel item;
+  final int rotation;
+  const PoppedTrunkItem({required this.item, required this.rotation});
+}
+

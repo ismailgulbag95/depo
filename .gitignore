@@ -48,7 +48,6 @@ app.*.map.json
 .widget_preview/
 
 # Nested git repos & temp
-/depo/
 .venv/
 .agents/skill-arsivi/_vercel-labs-skills/.git
 

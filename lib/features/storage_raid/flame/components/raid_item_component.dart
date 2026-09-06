@@ -24,7 +24,7 @@ class RaidItemComponent extends SpriteComponent with TapCallbacks {
     required super.size,
     super.sprite,
     this.shadowOpacity = 0.0,
-  }) : super(anchor: Anchor.center) {
+  }) : super(anchor: Anchor.bottomCenter) {
     // Katman sırasına göre render önceliği (Priority)
     // Katman 1 (Ön): 30, Katman 2 (Orta): 20, Katman 3 (Arka): 10
     priority = (4 - layer) * 10;
@@ -67,7 +67,34 @@ class RaidItemComponent extends SpriteComponent with TapCallbacks {
         borderPaint,
       );
     }
+
+    // 4. Debug Grid Modu Açıksa: Izgara Bounding Box & Boyut Etiketi Çiz
+    if (showDebugGrid) {
+      final debugPaint = Paint()
+        ..color = Colors.amberAccent
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5;
+
+      canvas.drawRect(size.toRect(), debugPaint);
+
+      final textSpan = TextSpan(
+        text: '${itemModel.width}x${itemModel.height} [L$layer]',
+        style: const TextStyle(
+          color: Colors.amberAccent,
+          fontSize: 9,
+          fontWeight: FontWeight.bold,
+          backgroundColor: Colors.black87,
+        ),
+      );
+      final tp = TextPainter(
+        text: textSpan,
+        textDirection: TextDirection.ltr,
+      )..layout();
+      tp.paint(canvas, const Offset(2, -12));
+    }
   }
+
+  bool showDebugGrid = false;
 
   void select() {
     isSelected = true;

@@ -71,8 +71,8 @@ class VehicleModel {
     return VehicleModel(
       id: map['id'] as int? ?? 1,
       name: map['name'] as String? ?? 'Pikap',
-      gridWidth: map['gridWidth'] as int? ?? 8,
-      gridHeight: map['gridHeight'] as int? ?? 12,
+      gridWidth: map['gridWidth'] as int? ?? 10,
+      gridHeight: map['gridHeight'] as int? ?? 6,
       maxWeightKg: (map['maxWeightKg'] as num?)?.toDouble() ?? 500.0,
       installedAddons: (map['installedAddons'] as List<dynamic>?)
               ?.map((e) => e as String)

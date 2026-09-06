@@ -36,11 +36,12 @@ class DatabaseService {
   /// Veritabanı boşsa varsayılan eşyaları ve oyuncu profilini oluşturur
   Future<void> _seedDefaultData() async {
     // 1. Eşya Kataloğunu Tohumlama (default_items.json)
-    if (_itemsBox.isEmpty) {
-      try {
-        final jsonString = await rootBundle.loadString('assets/data/default_items.json');
-        final List<dynamic> jsonList = jsonDecode(jsonString);
+    try {
+      final jsonString = await rootBundle.loadString('assets/data/default_items.json');
+      final List<dynamic> jsonList = jsonDecode(jsonString);
 
+      if (_itemsBox.length < jsonList.length) {
+        await _itemsBox.clear();
         int autoId = 1;
         for (final itemJson in jsonList) {
           final item = ItemModel(
@@ -69,9 +70,9 @@ class DatabaseService {
           await _itemsBox.put(autoId, item.toMap());
           autoId++;
         }
-      } catch (e) {
-        // Hata durumunda sessizce devam et
       }
+    } catch (e) {
+      debugPrint('Eşya tohumlama hatası: $e');
     }
 
     // 2. Başlangıç Oyuncu Profili ve Varsayılan Araç

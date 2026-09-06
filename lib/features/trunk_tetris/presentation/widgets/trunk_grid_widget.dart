@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:yeni_oyun_sablon/core/constants/asset_paths.dart';
 import 'package:yeni_oyun_sablon/core/database/models/item_model.dart';
 import 'package:yeni_oyun_sablon/core/theme/game_theme.dart';
+import 'package:yeni_oyun_sablon/core/utils/bitboard_engine.dart';
 import 'package:yeni_oyun_sablon/core/widgets/arcade_button.dart';
 import 'package:yeni_oyun_sablon/core/widgets/diegetic_metal_panel.dart';
 import 'package:yeni_oyun_sablon/features/trunk_tetris/providers/trunk_inventory_provider.dart';
@@ -14,6 +15,7 @@ class TrunkGridWidget extends ConsumerStatefulWidget {
   final int activeRotation;
   final VoidCallback? onTransportCalled;
   final Function(int x, int y)? onItemPickedFromTrunk;
+  final VoidCallback? onItemPlaced;
 
   const TrunkGridWidget({
     super.key,
@@ -21,6 +23,7 @@ class TrunkGridWidget extends ConsumerStatefulWidget {
     this.activeRotation = 0,
     this.onTransportCalled,
     this.onItemPickedFromTrunk,
+    this.onItemPlaced,
   });
 
   @override
@@ -29,17 +32,54 @@ class TrunkGridWidget extends ConsumerStatefulWidget {
 
 class _TrunkGridWidgetState extends ConsumerState<TrunkGridWidget> {
   int _vehicleVisualKey = 0; // Hızlı araç değişim animasyonunu tetikler
+  int? _hoveredStartX;
+  int? _hoveredStartY;
 
   /// "Nakliye Çağır" butonuna basıldığında mevcut aracı hızla kaydırıp yeni aracı geri geri yanaştırır
   void _handleCallTransport() {
     setState(() {
       _vehicleVisualKey++;
+      _hoveredStartX = null;
+      _hoveredStartY = null;
     });
 
     // Bagajı yeni boş nakliye aracı olarak temizle
     ref.read(trunkInventoryProvider.notifier).clearTrunk();
 
     widget.onTransportCalled?.call();
+  }
+
+  /// Rotasyon uygulanmış bitmask döndürür
+  List<int> _getRotatedMask(List<int> originalMask, int w, int h, int rotation) {
+    var shape = List<int>.from(originalMask);
+    var curW = w;
+    var curH = h;
+    final turns = (rotation % 360) ~/ 90;
+    for (int i = 0; i < turns; i++) {
+      shape = BitboardEngine.rotate90(shape: shape, originalW: curW, originalH: curH);
+      final temp = curW;
+      curW = curH;
+      curH = temp;
+    }
+    return shape;
+  }
+
+  /// Eşyanın kaplayacağı tüm ızgara hücre indekslerini hesaplar
+  Set<int> _getCoveredIndices(int startX, int startY, List<int> mask, int gridWidth, int gridHeight) {
+    final set = <int>{};
+    for (int r = 0; r < mask.length; r++) {
+      final rowMask = mask[r];
+      for (int c = 0; c < 32; c++) {
+        if ((rowMask & (1 << c)) != 0) {
+          final cellX = startX + c;
+          final cellY = startY + r;
+          if (cellX >= 0 && cellX < gridWidth && cellY >= 0 && cellY < gridHeight) {
+            set.add(cellY * gridWidth + cellX);
+          }
+        }
+      }
+    }
+    return set;
   }
 
   @override
@@ -171,47 +211,114 @@ class _TrunkGridWidgetState extends ConsumerState<TrunkGridWidget> {
   /// 8x12 veya 12x16 araç bagajı hücrelerini çizer
   Widget _buildGridCells(TrunkInventoryState trunkState) {
     final trunkBgPath = GameAssetPaths.getTrunkBackground(trunkState.vehicleName);
+    final activeItem = widget.activeDragItem;
+    final activeMask = activeItem != null
+        ? _getRotatedMask(activeItem.bitmask, activeItem.width, activeItem.height, widget.activeRotation)
+        : null;
+
+    final coveredIndices = (_hoveredStartX != null && _hoveredStartY != null && activeMask != null)
+        ? _getCoveredIndices(_hoveredStartX!, _hoveredStartY!, activeMask, trunkState.gridWidth, trunkState.gridHeight)
+        : const <int>{};
+
+    final isPlacementValid = (_hoveredStartX != null && _hoveredStartY != null && activeItem != null)
+        ? ref.read(trunkInventoryProvider.notifier).canPlaceItem(
+            item: activeItem,
+            startX: _hoveredStartX!,
+            startY: _hoveredStartY!,
+            rotation: widget.activeRotation,
+          )
+        : false;
+
+    final isPickup = trunkState.vehicleName.toLowerCase().contains('pikap') ||
+        trunkState.vehicleName.toLowerCase().contains('pickup') ||
+        trunkBgPath.contains('pickup');
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final cellW = constraints.maxWidth / trunkState.gridWidth;
-        final cellH = constraints.maxHeight / trunkState.gridHeight;
-        final cellSize = cellW < cellH ? cellW : cellH;
+        // 16:9 Araç Kadrajı Oranlama
+        final maxW = constraints.maxWidth;
+        final maxH = constraints.maxHeight;
+
+        double carW, carH;
+        if (isPickup) {
+          // 16:9 pikap aracı orantısı
+          if (maxW / maxH > 16 / 9) {
+            carH = maxH;
+            carW = carH * (16 / 9);
+          } else {
+            carW = maxW;
+            carH = carW * (9 / 16);
+          }
+        } else {
+          final cellW = maxW / trunkState.gridWidth;
+          final cellH = maxH / trunkState.gridHeight;
+          final cellSize = cellW < cellH ? cellW : cellH;
+          carW = cellSize * trunkState.gridWidth + 12;
+          carH = cellSize * trunkState.gridHeight + 12;
+        }
+
+        // Pikap kasa iç havuzu oranları (16:9 görsel koordinatları)
+        final bedLeft = isPickup ? carW * 0.090 : 6.0;
+        final bedTop = isPickup ? carH * 0.228 : 6.0;
+        final bedWidth = isPickup ? carW * 0.358 : (carW - 12);
+        final bedHeight = isPickup ? carH * 0.544 : (carH - 12);
+
+        // Kasa içi 10x6 hücrelerin en/boy oranı
+        final cellAspectRatio = (bedWidth / trunkState.gridWidth) / (bedHeight / trunkState.gridHeight);
 
         return Center(
           child: Container(
-            width: cellSize * trunkState.gridWidth,
-            height: cellSize * trunkState.gridHeight,
+            width: carW,
+            height: carH,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: GameColors.panelBorder, width: 1.5),
+              color: const Color(0xFF14151B),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFF383A48), width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.8),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(7),
+              borderRadius: BorderRadius.circular(8),
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  // 1. Dinamik Kasa / Konteyner Zemin Görseli
+                  // 1. Kuşbakışı Araç Görseli (Pikapta tüm araç: kasa solda, kabin sağda)
                   Image.asset(
                     trunkBgPath,
-                    fit: BoxFit.cover,
+                    fit: BoxFit.fill,
                     errorBuilder: (context, error, stackTrace) => Container(
-                      color: const Color(0xFF191B22),
+                      color: const Color(0xFF181715),
                     ),
                   ),
 
-                  // Kasa Zemin Karartma Maskesi (Hücre kontrastı için)
-                  Container(
-                    color: Colors.black.withValues(alpha: 0.38),
-                  ),
-
-                  // 2. Polyomino Izgara Hücreleri
-                  GridView.builder(
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: trunkState.gridWidth * trunkState.gridHeight,
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: trunkState.gridWidth,
-                    ),
+                  // 2. Kasa Alanı Üzerine Yedirilen Polyomino Izgara Hücreleri
+                  Positioned(
+                    left: bedLeft,
+                    top: bedTop,
+                    width: bedWidth,
+                    height: bedHeight,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: isPickup ? GameColors.gold.withValues(alpha: 0.35) : Colors.transparent,
+                          width: 1.2,
+                        ),
+                        borderRadius: BorderRadius.circular(4),
+                        color: isPickup ? Colors.black.withValues(alpha: 0.20) : Colors.transparent,
+                      ),
+                      child: GridView.builder(
+                        physics: const NeverScrollableScrollPhysics(),
+                        padding: EdgeInsets.zero,
+                        itemCount: trunkState.gridWidth * trunkState.gridHeight,
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: trunkState.gridWidth,
+                          childAspectRatio: cellAspectRatio,
+                        ),
                     itemBuilder: (context, index) {
                       final x = index % trunkState.gridWidth;
                       final y = index ~/ trunkState.gridWidth;
@@ -220,40 +327,104 @@ class _TrunkGridWidgetState extends ConsumerState<TrunkGridWidget> {
                       final isOccupied = y < trunkState.gridRows.length &&
                           (trunkState.gridRows[y] & (1 << x)) != 0;
 
+                      final isHoveredFootprint = coveredIndices.contains(index);
+
+                      Color cellColor = isOccupied
+                          ? GameColors.profitGreen.withValues(alpha: 0.85) // Dolu hücre
+                          : Colors.black.withValues(alpha: 0.32); // Boş hücre (Kasa zeminini gösterir)
+
+                      Color borderColor = isOccupied
+                          ? Colors.white54
+                          : Colors.white.withValues(alpha: 0.04);
+                      double borderWidth = 0.8;
+                      List<BoxShadow>? cellShadow;
+
+                      // Sürükleme veya üzerine gelme sırasında tam kapsanan ızgara footprint görseli
+                      if (isHoveredFootprint) {
+                        if (isPlacementValid) {
+                          cellColor = GameColors.neonCyan.withValues(alpha: 0.80);
+                          borderColor = GameColors.neonCyan;
+                          borderWidth = 2.0;
+                          cellShadow = [
+                            BoxShadow(
+                              color: GameColors.neonCyan.withValues(alpha: 0.6),
+                              blurRadius: 6,
+                              spreadRadius: 1,
+                            ),
+                          ];
+                        } else {
+                          cellColor = GameColors.lossRed.withValues(alpha: 0.80);
+                          borderColor = GameColors.lossRed;
+                          borderWidth = 2.0;
+                          cellShadow = [
+                            BoxShadow(
+                              color: GameColors.lossRed.withValues(alpha: 0.6),
+                              blurRadius: 6,
+                              spreadRadius: 1,
+                            ),
+                          ];
+                        }
+                      }
+
                       return DragTarget<ItemModel>(
                         onWillAcceptWithDetails: (details) {
-                          final item = details.data;
-                          return ref.read(trunkInventoryProvider.notifier).canPlaceItem(
-                                item: item,
-                                startX: x,
-                                startY: y,
-                                rotation: widget.activeRotation,
-                              );
+                          setState(() {
+                            _hoveredStartX = x;
+                            _hoveredStartY = y;
+                          });
+                          return true;
+                        },
+                        onMove: (details) {
+                          if (_hoveredStartX != x || _hoveredStartY != y) {
+                            setState(() {
+                              _hoveredStartX = x;
+                              _hoveredStartY = y;
+                            });
+                          }
+                        },
+                        onLeave: (data) {
+                          if (_hoveredStartX == x && _hoveredStartY == y) {
+                            setState(() {
+                              _hoveredStartX = null;
+                              _hoveredStartY = null;
+                            });
+                          }
                         },
                         onAcceptWithDetails: (details) {
                           final item = details.data;
-                          HapticFeedback.heavyImpact();
-                          ref.read(trunkInventoryProvider.notifier).placeItem(
+                          setState(() {
+                            _hoveredStartX = null;
+                            _hoveredStartY = null;
+                          });
+
+                          final canPlace = ref.read(trunkInventoryProvider.notifier).canPlaceItem(
                                 item: item,
                                 startX: x,
                                 startY: y,
                                 rotation: widget.activeRotation,
                               );
+
+                          if (canPlace) {
+                            HapticFeedback.heavyImpact();
+                            ref.read(trunkInventoryProvider.notifier).placeItem(
+                                  item: item,
+                                  startX: x,
+                                  startY: y,
+                                  rotation: widget.activeRotation,
+                                );
+                            widget.onItemPlaced?.call();
+                          } else {
+                            HapticFeedback.lightImpact();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Bu hücreye sığmıyor veya çakışıyor! 90° döndürün veya başka hücre deneyin.'),
+                                backgroundColor: GameColors.alertOrange,
+                                duration: Duration(milliseconds: 1500),
+                              ),
+                            );
+                          }
                         },
                         builder: (context, candidateData, rejectedData) {
-                          final isHoverValid = candidateData.isNotEmpty;
-                          final isHoverInvalid = rejectedData.isNotEmpty;
-
-                          Color cellColor = isOccupied
-                              ? GameColors.profitGreen.withValues(alpha: 0.85) // Dolu hücre
-                              : Colors.black.withValues(alpha: 0.32); // Boş hücre (Kasa zeminini gösterir)
-
-                          if (isHoverValid) {
-                            cellColor = GameColors.neonCyan.withValues(alpha: 0.75); // Yeşil snap
-                          } else if (isHoverInvalid) {
-                            cellColor = GameColors.lossRed.withValues(alpha: 0.75); // Kırmızı çakışma
-                          }
-
                           return GestureDetector(
                             onTap: () {
                               // Eğer hücre doluysa eşyayı yerinden kaldır ve seçili yap
@@ -275,8 +446,16 @@ class _TrunkGridWidgetState extends ConsumerState<TrunkGridWidget> {
                                         startY: y,
                                         rotation: widget.activeRotation,
                                       );
+                                  widget.onItemPlaced?.call();
                                 } else {
                                   HapticFeedback.lightImpact();
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Bu hücreye sığmıyor veya çakışıyor! 90° döndürün veya başka bir hücre deneyin.'),
+                                      backgroundColor: GameColors.alertOrange,
+                                      duration: Duration(milliseconds: 1500),
+                                    ),
+                                  );
                                 }
                               }
                             },
@@ -286,21 +465,10 @@ class _TrunkGridWidgetState extends ConsumerState<TrunkGridWidget> {
                                 color: cellColor,
                                 borderRadius: BorderRadius.circular(3),
                                 border: Border.all(
-                                  color: isOccupied
-                                      ? Colors.white54
-                                      : isHoverValid
-                                          ? GameColors.neonCyan
-                                          : Colors.white.withValues(alpha: 0.04),
-                                  width: isHoverValid || isHoverInvalid ? 1.5 : 0.8,
+                                  color: borderColor,
+                                  width: borderWidth,
                                 ),
-                                boxShadow: isHoverValid
-                                    ? [
-                                        BoxShadow(
-                                          color: GameColors.neonCyan.withValues(alpha: 0.4),
-                                          blurRadius: 4,
-                                        ),
-                                      ]
-                                    : null,
+                                boxShadow: cellShadow,
                               ),
                             ),
                           );
@@ -308,12 +476,37 @@ class _TrunkGridWidgetState extends ConsumerState<TrunkGridWidget> {
                       );
                     },
                   ),
-                ],
+                ),
               ),
+            ],
+          ),
             ),
           ),
         );
       },
     );
   }
+}
+
+/// Pikap Açık Kasa Oluklu Çelik Zemin Deseni
+class _TruckBedRibPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final ribPaint = Paint()
+      ..color = Colors.black.withValues(alpha: 0.25)
+      ..strokeWidth = 3.0;
+
+    final highlightPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.05)
+      ..strokeWidth = 1.0;
+
+    // Dikey oluklu sac çizgileri
+    for (double x = 8; x < size.width; x += 14) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), ribPaint);
+      canvas.drawLine(Offset(x + 1.5, 0), Offset(x + 1.5, size.height), highlightPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

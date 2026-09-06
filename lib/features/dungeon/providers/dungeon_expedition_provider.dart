@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:yeni_oyun_sablon/core/database/database_service.dart';
 import 'package:yeni_oyun_sablon/core/database/models/item_model.dart';
 import 'package:yeni_oyun_sablon/features/dungeon/models/mercenary_model.dart';
 import 'package:yeni_oyun_sablon/features/player_profile/providers/player_profile_provider.dart';
@@ -43,6 +44,7 @@ class ExpeditionResult {
   final int xpEarned;
   final List<ItemModel> lootItems;
   final int cooldownAppliedSeconds;
+  final String? unlockedDistrictTitle;
 
   ExpeditionResult({
     required this.isVictory,
@@ -51,6 +53,7 @@ class ExpeditionResult {
     required this.xpEarned,
     required this.lootItems,
     required this.cooldownAppliedSeconds,
+    this.unlockedDistrictTitle,
   });
 }
 
@@ -69,24 +72,9 @@ class DungeonState {
   });
 
   factory DungeonState.initial() {
-    return DungeonState(
-      mercenaries: [
-        const MercenaryModel(
-          id: 1,
-          name: 'Barın "Gölge"',
-          role: 'Avcı & İzcisi',
-          avatar: '🏹',
-          baseRestDurationSeconds: 60,
-        ),
-        const MercenaryModel(
-          id: 2,
-          name: 'Kaya "Zırhlı"',
-          role: 'Ağır Şövalye',
-          avatar: '🛡️',
-          baseRestDurationSeconds: 90,
-        ),
-      ],
-      lounge: const RestingLoungeModel(),
+    return const DungeonState(
+      mercenaries: [],
+      lounge: RestingLoungeModel(),
     );
   }
 
@@ -168,6 +156,12 @@ class DungeonExpeditionNotifier extends StateNotifier<DungeonState> {
     }
   }
 
+  /// Yeni Paralı Asker İşe Al ve Kışlaya Ekle
+  void recruitMercenary(MercenaryModel merc) {
+    final updated = List<MercenaryModel>.from(state.mercenaries)..add(merc);
+    state = state.copyWith(mercenaries: updated);
+  }
+
   /// Savaşçıya Silah/Zırh Kuşandır
   void equipItemToMercenary(int mercenaryId, ItemModel item) {
     final updated = state.mercenaries.map((m) {
@@ -194,7 +188,7 @@ class DungeonExpeditionNotifier extends StateNotifier<DungeonState> {
     required int mercenaryId,
     required String dungeonName,
     required int dungeonDifficulty,
-    int durationSeconds = 30, // Test/Hızlı Oynanış için 30 saniye
+    int durationSeconds = 30,
   }) {
     final mercIndex = state.mercenaries.indexWhere((m) => m.id == mercenaryId);
     if (mercIndex == -1) return;
@@ -219,30 +213,62 @@ class DungeonExpeditionNotifier extends StateNotifier<DungeonState> {
     );
   }
 
-  /// Sefer Bittiğinde Çözümleme (Discrete-Time Çözümleme)
-  void _finishExpedition(ActiveExpedition exp) {
+  /// Sefer Bittiğinde Çözümleme (Kullanıcı Kuralı: Altın YOK, sadece EŞYA ganimeti doğrudan Ev Deposuna gider)
+  Future<void> _finishExpedition(ActiveExpedition exp) async {
     final mercIndex = state.mercenaries.indexWhere((m) => m.id == exp.mercenaryId);
     final merc = mercIndex != -1 ? state.mercenaries[mercIndex] : null;
 
-    // Kazanma Şansı: Güç Skoru / Zindan Zorluğu
-    final winRate = (exp.combatPower / (exp.dungeonDifficulty * 1.2)).clamp(0.15, 0.95);
+    final winRate = (exp.combatPower / (exp.dungeonDifficulty * 1.2)).clamp(0.20, 0.95);
     final isVictory = _rnd.nextDouble() <= winRate;
 
-    // Dinlenme Odası Konfor İndirimi
     final discount = state.lounge.restSpeedMultiplier;
     final baseDuration = merc?.baseRestDurationSeconds ?? 60;
 
-    // Kullanıcı Kuralı: Yenilirse x3 Cooldown, Zaferde normal Cooldown; Konfor süreyi kısaltır! Eşya hasarı yok!
     final cooldownSeconds = isVictory
         ? (baseDuration * discount).round()
-        : (baseDuration * 3 * discount).round();
+        : (baseDuration * 2.5 * discount).round();
 
-    final goldEarned = isVictory ? 250 + _rnd.nextInt(350) : 50;
-    final xpEarned = isVictory ? 100 : 25;
+    final xpEarned = isVictory ? 120 : 30;
+    String? unlockedTitle;
+    final lootItems = <ItemModel>[];
 
-    // Zaferde oyuncunun profiline para ve itibar ekle
-    ref.read(playerProfileProvider.notifier).addCash(goldEarned);
-    ref.read(playerProfileProvider.notifier).addReputation(xpEarned);
+    if (isVictory) {
+      ref.read(playerProfileProvider.notifier).addReputation(xpEarned);
+
+      // Veritabanından rastgele 1-2 adet ganimet eşyası çek ve EV DEPOSUNA aktar
+      try {
+        final allItems = await DatabaseService.instance.getAllItems();
+        if (allItems.isNotEmpty) {
+          final lootCount = 1 + _rnd.nextInt(2);
+          for (int i = 0; i < lootCount; i++) {
+            final randomItem = allItems[_rnd.nextInt(allItems.length)];
+            lootItems.add(randomItem);
+            await ref.read(playerProfileProvider.notifier).addToHomeStorage(randomItem.id);
+          }
+        }
+      } catch (_) {}
+
+      // Kilitli ihale bölgelerini açma kontrolü
+      final dName = exp.dungeonName.toLowerCase();
+      String? targetDistrict;
+      if (dName.contains('maden') || dName.contains('karanlik')) {
+        targetDistrict = 'home';
+        unlockedTitle = 'Terk Edilmiş Ev & Beyaz Eşya Deposu Lisansı';
+      } else if (dName.contains('golge') || dName.contains('mahzen')) {
+        targetDistrict = 'art';
+        unlockedTitle = 'Müzisyen & Sanatçı Kasası Lisansı';
+      } else if (dName.contains('kale') || dName.contains('harabe')) {
+        targetDistrict = 'military';
+        unlockedTitle = 'Taktik Sığınak & Donanım Deposu Lisansı';
+      } else if (dName.contains('ejder') || dName.contains('in')) {
+        targetDistrict = 'luxury';
+        unlockedTitle = 'Milyarder Gizli Kasası Lisansı';
+      }
+
+      if (targetDistrict != null) {
+        ref.read(playerProfileProvider.notifier).unlockDistrict(targetDistrict);
+      }
+    }
 
     // Savaşçıyı dinlenmeye al
     final updatedMercs = List<MercenaryModel>.from(state.mercenaries);
@@ -259,10 +285,11 @@ class DungeonExpeditionNotifier extends StateNotifier<DungeonState> {
       lastResult: ExpeditionResult(
         isVictory: isVictory,
         dungeonName: exp.dungeonName,
-        goldEarned: goldEarned,
+        goldEarned: 0, // Kural: Altın yok, sadece eşya
         xpEarned: xpEarned,
-        lootItems: const [],
+        lootItems: lootItems,
         cooldownAppliedSeconds: cooldownSeconds,
+        unlockedDistrictTitle: unlockedTitle,
       ),
     );
   }
