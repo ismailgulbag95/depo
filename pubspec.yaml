@@ -71,6 +71,7 @@ flutter:
     - assets/characters/
     - assets/vehicles/
     - assets/backgrounds/
+    - assets/images/
     - assets/ui/
     - assets/items/
     - assets/items/agir_sanayi/

@@ -14,7 +14,6 @@ import 'package:yeni_oyun_sablon/core/widgets/hazard_stripe_banner.dart';
 import 'package:yeni_oyun_sablon/core/widgets/retro_led_display.dart';
 import 'package:yeni_oyun_sablon/features/city_map/presentation/city_map_screen.dart';
 import 'package:yeni_oyun_sablon/features/onboarding/providers/ftue_provider.dart';
-import 'package:yeni_oyun_sablon/features/onboarding/widgets/ftue_guide_overlay.dart';
 import 'package:yeni_oyun_sablon/features/player_profile/providers/player_profile_provider.dart';
 import 'package:yeni_oyun_sablon/features/storage_raid/presentation/storage_raid_screen.dart';
 import 'package:yeni_oyun_sablon/features/storage_raid/services/storage_generator_service.dart';
@@ -75,8 +74,6 @@ class _LiveAuctionScreenState extends ConsumerState<LiveAuctionScreen>
   bool _isPlayerHighest = false;
   bool _playerWon = false;
 
-  // Scripted Tutorial Durumu
-  int _scriptedStep = 0; // 0: 200 bas, 1: 350 bas, 2: 450 bas
   bool get _isScripted => widget.isFirstAuction || ref.read(ftueProvider) == FTUEStep.scriptedAuction;
 
   // Screen Shake Controller

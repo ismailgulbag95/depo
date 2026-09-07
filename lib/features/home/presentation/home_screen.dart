@@ -14,6 +14,8 @@ import 'package:yeni_oyun_sablon/features/dungeon/presentation/dungeon_hub_scree
 import 'package:yeni_oyun_sablon/features/dungeon/presentation/widgets/dungeon_equipment_guide_sheet.dart';
 import 'package:yeni_oyun_sablon/features/dungeon/providers/dungeon_expedition_provider.dart';
 import 'package:yeni_oyun_sablon/features/marketplace/models/web_listing_model.dart';
+import 'package:yeni_oyun_sablon/features/marketplace/providers/vip_orders_provider.dart';
+import 'package:yeni_oyun_sablon/features/marketplace/providers/market_whisper_provider.dart';
 import 'package:yeni_oyun_sablon/features/marketplace/providers/web_marketplace_provider.dart';
 import 'package:yeni_oyun_sablon/features/onboarding/providers/ftue_provider.dart';
 import 'package:yeni_oyun_sablon/features/onboarding/widgets/ftue_guide_overlay.dart';
@@ -37,6 +39,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   List<ItemModel> _homeStorageItems = [];
   List<ItemModel> _trunkItems = [];
   bool _isLoading = true;
+  bool _isMonitorZoomed = false;
 
   @override
   void initState() {
@@ -370,12 +373,355 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   // ==========================================
-  // 1. 💻 ÇALIŞMA ODASI (PC Web Marketplace)
+  // 1. 💻 ÇALIŞMA ODASI (Modern Ofis & MezatNet)
   // ==========================================
   Widget _buildOfficeTab() {
     final webState = ref.watch(webMarketplaceProvider);
     final isFTUEMarket = ref.watch(ftueProvider) == FTUEStep.marketplaceFirstSale;
+    final vipState = ref.watch(vipOrdersProvider);
+    final whisper = ref.watch(marketWhisperProvider);
 
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final w = constraints.maxWidth;
+        final h = constraints.maxHeight;
+
+        if (_isMonitorZoomed) {
+          // MONİTÖR YAKINLAŞMIŞ DURUMDA: Tam Ekran Web Pazarı Terminali
+          return Container(
+            color: const Color(0xFF0C0D14),
+            child: Column(
+              children: [
+                // Monitör Üst Çerçevesi & Geri Dön Butonu
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF141520),
+                    border: Border(bottom: BorderSide(color: GameColors.neonCyan, width: 1.5)),
+                  ),
+                  child: Row(
+                    children: [
+                      ArcadeButton(
+                        text: 'ODAYA DÖN ↩️',
+                        icon: Icons.arrow_back,
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          setState(() => _isMonitorZoomed = false);
+                        },
+                        primaryColor: const Color(0xFF2A2D3A),
+                        shadowColor: Colors.black,
+                        textColor: Colors.white,
+                        height: 32,
+                        fontSize: 10,
+                      ),
+                      const SizedBox(width: 12),
+                      const Icon(Icons.language, color: GameColors.neonCyan, size: 18),
+                      const SizedBox(width: 6),
+                      Text(
+                        'MEZATNET v2.4 • GİZLİ WEB AÇIK ARTIRMA PAZARI',
+                        style: GameTypography.display(color: GameColors.neonCyan, fontSize: 11),
+                      ),
+                      const Spacer(),
+                      if (whisper.isLampOn)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: GameColors.gold.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: GameColors.gold),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.lightbulb, color: GameColors.gold, size: 12),
+                              const SizedBox(width: 4),
+                              Text(
+                                '+%${(whisper.priceBonus * 100).toInt()} Fiyat Primi Aktif!',
+                                style: const TextStyle(color: GameColors.goldLight, fontSize: 9, fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                // Web Pazarı İçeriği
+                Expanded(
+                  child: _buildWebMarketplaceContent(webState, isFTUEMarket),
+                ),
+              ],
+            ),
+          );
+        }
+
+        // MONİTÖR UZAKTA: Modern Çalışma Odası Sahnesi
+        return Stack(
+          children: [
+            // 1. Modern Ofis Arka Planı (Full Bleed)
+            Positioned.fill(
+              child: Image.asset(
+                GameAssetPaths.bgHomeOffice,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  color: const Color(0xFF141722),
+                  child: const Center(
+                    child: Icon(Icons.computer, color: GameColors.neonCyan, size: 60),
+                  ),
+                ),
+              ),
+            ),
+
+            // 2. Masa Lambası Açık İse Işık Parıltısı (Warm Radial Glow)
+            if (whisper.isLampOn)
+              Positioned(
+                left: 0,
+                bottom: 0,
+                width: w * 0.65,
+                height: h * 0.75,
+                child: IgnorePointer(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: RadialGradient(
+                        center: const Alignment(-0.5, 0.4),
+                        radius: 0.8,
+                        colors: [
+                          const Color(0xFFFFB300).withValues(alpha: 0.28),
+                          const Color(0xFFFF8F00).withValues(alpha: 0.12),
+                          Colors.transparent,
+                        ],
+                        stops: const [0.0, 0.5, 1.0],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+            // 3. Üst Bar: Oda Durumu & Kısayollar
+            Positioned(
+              top: 10,
+              left: 12,
+              right: 12,
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.85),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: GameColors.neonCyan.withValues(alpha: 0.5), width: 1.5),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.computer, color: GameColors.neonCyan, size: 16),
+                        const SizedBox(width: 6),
+                        Text('MODERN OFİS & MEZATNET', style: GameTypography.display(color: Colors.white, fontSize: 11)),
+                        const SizedBox(width: 8),
+                        const Text('•', style: TextStyle(color: Colors.white38)),
+                        const SizedBox(width: 8),
+                        Text(
+                          whisper.isLampOn ? '💡 Lamba: AÇIK' : '💡 Lamba: KAPALI',
+                          style: TextStyle(
+                            color: whisper.isLampOn ? GameColors.goldLight : Colors.white54,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Spacer(),
+                  // Pano Kısayolu
+                  ArcadeButton(
+                    text: 'VIP PANO 📌 (${vipState.orders.where((o) => !o.isCompleted).length})',
+                    icon: Icons.push_pin,
+                    onPressed: _showVipOrdersDialog,
+                    primaryColor: GameColors.gold,
+                    shadowColor: const Color(0xFF8C711C),
+                    textColor: Colors.black,
+                    height: 32,
+                    fontSize: 10,
+                  ),
+                ],
+              ),
+            ),
+
+            // 4. Lamba Açık İse Canlı Piyasa Fısıltısı Bildirimi
+            if (whisper.isLampOn)
+              Positioned(
+                top: 52,
+                left: 14,
+                right: 14,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1B1B10).withValues(alpha: 0.92),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: GameColors.gold, width: 1.5),
+                    boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 8)],
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.lightbulb, color: GameColors.gold, size: 20),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(whisper.title, style: GameTypography.display(color: GameColors.goldLight, fontSize: 11)),
+                            Text(whisper.message, style: const TextStyle(color: Colors.white, fontSize: 10)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+            // 5. İNTERAKTİF MONİTÖR HOTSPOT'U (Geniş Kavisli Monitör)
+            Positioned(
+              left: w * 0.28,
+              top: h * 0.36,
+              width: w * 0.38,
+              height: h * 0.38,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  HapticFeedback.mediumImpact();
+                  setState(() => _isMonitorZoomed = true);
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: GameColors.neonCyan.withValues(alpha: 0.8), width: 2),
+                    color: GameColors.neonCyan.withValues(alpha: 0.08),
+                  ),
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.85),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: GameColors.neonCyan, width: 1.5),
+                        boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 6)],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.search, color: GameColors.neonCyan, size: 14),
+                          const SizedBox(width: 6),
+                          Text(
+                            'MEZATNET (${webState.listings.length} İlan) • YAKLAŞ 🔍',
+                            style: GameTypography.display(color: GameColors.neonCyan, fontSize: 10),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            // 6. İNTERAKTİF MASA LAMBASI HOTSPOT'U (Sol Masa Üstü)
+            Positioned(
+              left: w * 0.16,
+              top: h * 0.42,
+              width: w * 0.13,
+              height: h * 0.36,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  ref.read(marketWhisperProvider.notifier).toggleLamp();
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: GameColors.gold.withValues(alpha: 0.5), width: 1.5),
+                  ),
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.85),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: GameColors.gold),
+                      ),
+                      child: Text(
+                        whisper.isLampOn ? '💡 AÇIK' : '💡 YAK',
+                        style: const TextStyle(color: GameColors.goldLight, fontSize: 9, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            // 7. İNTERAKTİF DUVARDAKİ MANTAR PANO HOTSPOT'U (Sağ Duvar)
+            Positioned(
+              right: w * 0.08,
+              top: h * 0.08,
+              width: w * 0.24,
+              height: h * 0.48,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  HapticFeedback.mediumImpact();
+                  _showVipOrdersDialog();
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: GameColors.gold.withValues(alpha: 0.7), width: 2),
+                    color: GameColors.gold.withValues(alpha: 0.06),
+                  ),
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: Container(
+                      margin: const EdgeInsets.only(top: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.85),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: GameColors.gold),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('📌', style: TextStyle(fontSize: 12)),
+                          const SizedBox(width: 4),
+                          Text(
+                            'VIP SİPARİŞLER (${vipState.orders.where((o) => !o.isCompleted).length})',
+                            style: GameTypography.display(color: GameColors.goldLight, fontSize: 9),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            // 8. FTUE REHBER SPOTLIGHT
+            if (isFTUEMarket)
+              Positioned(
+                left: w * 0.32,
+                top: h * 0.26,
+                child: const GuideArrowSpotlight(
+                  text: 'Monitöre dokunarak Web Pazarına yaklaş ve ilk ilanını ver!',
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Web Pazarı İçeriği (Monitör İçi)
+  Widget _buildWebMarketplaceContent(WebMarketplaceState webState, bool isFTUEMarket) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(14),
       child: Column(
@@ -383,7 +729,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         children: [
           if (isFTUEMarket) ...[
             const GuideArrowSpotlight(
-              text: 'Çalışma Odasına hoş geldin! Aşağıdaki Ev Deposundan normal bir eşyayı seçip "İLANA KOY" diyerek ilk satışını başlat ve kasanı doldur. (Büyülü savaş eşyaları korumalıdır, onları satamazsın!)',
+              text: 'Aşağıdaki Ev Deposundan normal bir eşyayı seçip "İLANA KOY" diyerek ilk satışını başlat. (Büyülü savaş eşyaları korumalıdır, onları satamazsın!)',
             ),
             const SizedBox(height: 8),
           ],
@@ -558,6 +904,157 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             ),
         ],
       ),
+    );
+  }
+
+  /// 📌 VIP Müşteri Siparişleri Panosu Modalı
+  void _showVipOrdersDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return Consumer(
+          builder: (context, ref, _) {
+            final vipState = ref.watch(vipOrdersProvider);
+
+            return Dialog(
+              backgroundColor: Colors.transparent,
+              child: DiegeticMetalPanel(
+                padding: const EdgeInsets.all(16),
+                borderColor: GameColors.gold,
+                borderWidth: 2,
+                glowColor: GameColors.gold,
+                borderRadius: 16,
+                backgroundColor: const Color(0xFF14141E).withValues(alpha: 0.98),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        const Text('📌', style: TextStyle(fontSize: 28)),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('VIP KOLEKSİYONCU SİPARİŞLERİ', style: GameTypography.display(color: GameColors.goldLight, fontSize: 13)),
+                              const Text('Zengin koleksiyoncuların nadir ve efsanevi eşya talepleri. Piyasa değerinin kat kat üzerinde nakit ve itibar kazandırır.', style: TextStyle(color: Colors.white60, fontSize: 10)),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, color: Colors.white38),
+                          onPressed: () => Navigator.of(ctx).pop(),
+                        ),
+                      ],
+                    ),
+                    const Divider(color: Colors.white12),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      height: 340,
+                      width: double.maxFinite,
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: vipState.orders.length,
+                        itemBuilder: (context, index) {
+                          final order = vipState.orders[index];
+                          final matchingItem = _homeStorageItems.where((i) => order.matchesItem(i)).firstOrNull;
+
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: order.isCompleted
+                                  ? Colors.black26
+                                  : const Color(0xFF1E202B),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: order.isCompleted
+                                    ? Colors.white10
+                                    : (matchingItem != null ? GameColors.profitGreen : Colors.white24),
+                                width: matchingItem != null ? 1.5 : 1,
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(order.clientAvatar, style: const TextStyle(fontSize: 22)),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text('${order.clientName} (${order.clientTitle})', style: GameTypography.display(color: Colors.white, fontSize: 11)),
+                                          Text('Kategori: ${order.requiredCategory.replaceAll('_', ' ').toUpperCase()} • Min Değer: ${order.minBaseValue} ₺', style: const TextStyle(color: GameColors.goldLight, fontSize: 9)),
+                                        ],
+                                      ),
+                                    ),
+                                    if (order.isCompleted)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(color: GameColors.profitGreen.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(4)),
+                                        child: const Text('TESLİM EDİLDİ ✅', style: TextStyle(color: GameColors.profitGreen, fontSize: 9)),
+                                      )
+                                    else
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.end,
+                                        children: [
+                                          Text('+${order.cashReward} ₺', style: GameTypography.led(color: GameColors.profitGreen, fontSize: 11)),
+                                          Text('+${order.xpReward} XP', style: const TextStyle(color: GameColors.gold, fontSize: 9)),
+                                        ],
+                                      ),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                Text('"${order.requestDescription}"', style: const TextStyle(color: Colors.white70, fontSize: 10, fontStyle: FontStyle.italic)),
+                                if (!order.isCompleted) ...[
+                                  const SizedBox(height: 8),
+                                  if (matchingItem != null)
+                                    ArcadeButton(
+                                      text: 'EŞYAYI TESLİM ET 🎁 (${matchingItem.nameTr})',
+                                      icon: Icons.check_circle,
+                                      onPressed: () async {
+                                        HapticFeedback.heavyImpact();
+                                        final success = ref.read(vipOrdersProvider.notifier).deliverOrder(
+                                              orderId: order.id,
+                                              item: matchingItem,
+                                            );
+                                        if (success) {
+                                          await ref.read(playerProfileProvider.notifier).removeFromHomeStorage(matchingItem.id);
+                                          await _loadAllInventories();
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(
+                                                content: Text('${order.clientName} siparişini teslim aldı! +${order.cashReward} ₺ ve +${order.xpReward} XP kazandınız!'),
+                                                backgroundColor: GameColors.profitGreen,
+                                              ),
+                                            );
+                                          }
+                                        }
+                                      },
+                                      primaryColor: GameColors.profitGreen,
+                                      shadowColor: const Color(0xFF006622),
+                                      textColor: Colors.black,
+                                      height: 32,
+                                      fontSize: 10,
+                                    )
+                                  else
+                                    const Text('⚠️ Ev deponuzda bu siparişe uygun nadir eşya bulunmuyor. Depo müzayedelerinden bulun!', style: TextStyle(color: Colors.white38, fontSize: 9)),
+                                ],
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 

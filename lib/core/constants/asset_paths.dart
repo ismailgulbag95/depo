@@ -19,6 +19,7 @@ class GameAssetPaths {
   static const String vehicleEmergencyTow = 'assets/vehicles/vehicle_emergency_tow.jpg';
 
   // --- MEKAN ARKA PLANLARI (Backgrounds) ---
+  static const String bgHomeOffice = 'assets/backgrounds/bg_home_office.jpg';
   static const String bgAuctionYard = 'assets/backgrounds/bg_auction_yard.jpg';
   static const String bgWorkshopGarage = 'assets/backgrounds/bg_workshop_garage.jpg';
   static const String bgMarketplaceStore = 'assets/backgrounds/bg_marketplace_store.jpg';
@@ -31,6 +32,16 @@ class GameAssetPaths {
   static const String bgBarracksArcher = 'assets/backgrounds/bg_barracks_archer.jpg';
   static const String bgBarracksMage = 'assets/backgrounds/bg_barracks_mage.jpg';
   static const String bgBarracksKnight = 'assets/backgrounds/bg_barracks_knight.jpg';
+
+  // --- HARİTA NAVİGASYON İKONLARI (Map Waypoint Icons) ---
+  static const String iconMapHome = 'assets/ui/icon_map_home.png';
+  static const String iconMapWholesaler = 'assets/ui/icon_map_wholesaler.png';
+  static const String iconMapDealership = 'assets/ui/icon_map_dealership.png';
+  static const String iconMapPawn = 'assets/ui/icon_map_pawn.png';
+  static const String iconMapAuction = 'assets/ui/icon_map_auction.png';
+  static const String iconMapRealEstate = 'assets/ui/icon_map_real_estate.png';
+  static const String iconMapTavern = 'assets/ui/icon_map_tavern.png';
+  static const String iconMapDungeon = 'assets/ui/icon_map_dungeon.png';
 
   /// Rakip ismine göre uygun karakter portresini döner
   static String getRivalAvatar(String rivalName) {
