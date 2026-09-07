@@ -8,10 +8,10 @@ enum FTUEStep {
   tetrisTutorial,         // 3. Tetris İstif Kılavuzu & Butonlar + Garantili Ekipman
   interactiveMapIntro,    // 4. Stilize Şehir Haritası Keşfi & Eve Yönlendirme
   homeInventoryTransfer,  // 5. Eve Giriş & Bagajı Tek Tuşla Depoya Boşaltma
-  gearAndNpcIntro,        // 6. Büyülü Savaş Eşyası Parlaması & Dinlenme Odası Tanıtımı
-  tavernHiring,           // 7. Han (Tavern) Ziyareti, Karakter Replikleri & NPC Kiralama
-  restRoomEquip,          // 8. Dinlenme Odasında Askere Büyülü Ekipman Giydirme
-  marketplaceFirstSale,   // 9. Çalışma Odası İnternet Pazarı Fiyatlandırma & İlk Satış
+  marketplaceFirstSale,   // 6. Çalışma Odası İnternet Pazarı Fiyatlandırma & İlk Satış (Büyülü Eşya Korumalı)
+  gearAndNpcIntro,        // 7. Büyülü Savaş Eşyası Farkındalığı & Dinlenme Odası Tanıtımı
+  tavernHiring,           // 8. Han (Tavern) Ziyareti, Karakter Replikleri & NPC Kiralama (Kazanılan Parayla!)
+  restRoomEquip,          // 9. Dinlenme Odasında Askere Büyülü Ekipman Giydirme
   completed,              // 10. Rehber Tamamlandı - Serbest Oyun
 }
 

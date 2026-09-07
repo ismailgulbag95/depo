@@ -32,6 +32,15 @@ class GameColors {
 
 /// Endüstriyel Tipografi Sistemi (Anti-AI Font Hierarchy)
 class GameTypography {
+  /// Evrensel font glifleri ve çoklu dil (TR, RU, ES) desteği için fallback listesi
+  static const List<String> fontFallback = [
+    'Noto Sans',
+    'Roboto',
+    'Segoe UI',
+    'Arial',
+    'sans-serif',
+  ];
+
   /// Başlıklar, Butonlar ve "SATILDI" damgaları için endüstriyel damga fontu
   static TextStyle display({
     double fontSize = 18,
@@ -44,6 +53,8 @@ class GameTypography {
       color: color,
       fontWeight: fontWeight,
       letterSpacing: letterSpacing,
+    ).copyWith(
+      fontFamilyFallback: fontFallback,
     );
   }
 
@@ -60,6 +71,8 @@ class GameTypography {
       fontWeight: fontWeight,
       letterSpacing: letterSpacing,
       fontFeatures: const [FontFeature.tabularFigures()],
+    ).copyWith(
+      fontFamilyFallback: fontFallback,
     );
   }
 
@@ -75,6 +88,8 @@ class GameTypography {
       color: color,
       fontWeight: fontWeight,
       letterSpacing: letterSpacing,
+    ).copyWith(
+      fontFamilyFallback: fontFallback,
     );
   }
 }

@@ -8,6 +8,7 @@ import 'package:yeni_oyun_sablon/core/widgets/hazard_stripe_banner.dart';
 import 'package:yeni_oyun_sablon/core/widgets/retro_led_display.dart';
 import 'package:yeni_oyun_sablon/features/auction/presentation/live_auction_screen.dart';
 import 'package:yeni_oyun_sablon/features/dealership/presentation/dealership_screen.dart';
+import 'package:yeni_oyun_sablon/features/dungeon/presentation/dungeon_hub_screen.dart';
 import 'package:yeni_oyun_sablon/features/home/presentation/home_screen.dart';
 import 'package:yeni_oyun_sablon/features/onboarding/providers/ftue_provider.dart';
 import 'package:yeni_oyun_sablon/features/onboarding/widgets/ftue_guide_overlay.dart';
@@ -69,7 +70,9 @@ class _CityMapScreenState extends ConsumerState<CityMapScreen>
     final profile = ref.watch(playerProfileProvider);
     final trunkState = ref.watch(trunkInventoryProvider);
     final ftueStep = ref.watch(ftueProvider);
-    final isMapFTUE = ftueStep == FTUEStep.interactiveMapIntro;
+    final isMapIntroFTUE = ftueStep == FTUEStep.interactiveMapIntro;
+    final isTavernHiringFTUE = ftueStep == FTUEStep.tavernHiring;
+    final isAnyFTUE = isMapIntroFTUE || isTavernHiringFTUE;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A0B10),
@@ -151,7 +154,7 @@ class _CityMapScreenState extends ConsumerState<CityMapScreen>
                     ),
                   ),
 
-                  // Harita Üzerindeki İnteraktif Stilize Bölge Butonları
+                  // Harita Üzerindeki İnteraktif Stilize Bölge Butonları (16:9 Yatay Harita Yerleşimi)
                   Positioned.fill(
                     child: LayoutBuilder(
                       builder: (context, constraints) {
@@ -160,95 +163,138 @@ class _CityMapScreenState extends ConsumerState<CityMapScreen>
 
                         return Stack(
                           children: [
-                            // 🏠 1. EV & KARARGAH (Merkez)
-                            _buildMapDistrictNode(
-                              left: w * 0.30,
-                              top: h * 0.44,
-                              title: '🏠 EV & KARARGAH',
-                              subtitle: 'Web Pazar • Zindan • Depo',
-                              accentColor: GameColors.neonCyan,
-                              isHighlighted: isMapFTUE,
-                              onTap: () {
-                                _navigateTo(
-                                  const HomeScreen(),
-                                  onBeforeNav: () {
-                                    if (isMapFTUE) {
-                                      ref.read(ftueProvider.notifier).setStep(FTUEStep.homeInventoryTransfer);
-                                    }
-                                  },
-                                );
-                              },
-                            ),
-
-                            // 🏪 2. TOPTANCI (Kuzeybatı)
-                            _buildMapDistrictNode(
-                              left: w * 0.15,
-                              top: h * 0.18,
+                            // 🏪 2. TOPTANCI (Kuzeybatı - Turuncu Bölge)
+                            _buildMapStampButton(
+                              left: w * 0.17,
+                              top: h * 0.15,
                               title: '🏪 TOPTANCI & HURDA',
-                              subtitle: '%50 Peşin Hızlı Satış',
                               accentColor: GameColors.alertOrange,
                               onTap: () => _navigateTo(const WholesalerScreen()),
                             ),
 
-                            // 🏢 3. EMLAK (Kuzeydoğu)
-                            _buildMapDistrictNode(
-                              left: w * 0.56,
-                              top: h * 0.22,
+                            // 🏢 3. EMLAK (Kuzeydoğu - Sarı Bölge)
+                            _buildMapStampButton(
+                              left: w * 0.61,
+                              top: h * 0.15,
                               title: '🏢 EMLAK BÜROSU',
-                              subtitle: 'Ev Geliştirme & Alan',
                               accentColor: const Color(0xFF64B5F6),
                               onTap: () => _navigateTo(const RealEstateScreen()),
                             ),
 
-                            // 🚗 4. OTO SANAYİ (Batı)
-                            _buildMapDistrictNode(
+                            // 🚗 4. OTO SANAYİ (Batı - Mavi Bölge)
+                            _buildMapStampButton(
                               left: w * 0.10,
-                              top: h * 0.45,
+                              top: h * 0.46,
                               title: '🚗 OTO SANAYİ',
-                              subtitle: 'Bagaj & Araç Alımı',
                               accentColor: const Color(0xFFFFB74D),
                               onTap: () => _navigateTo(const DealershipScreen()),
                             ),
 
-                            // 🛒 5. REHİN DÜKKANI (Güneybatı)
-                            _buildMapDistrictNode(
-                              left: w * 0.14,
-                              top: h * 0.65,
+                            // 🛒 5. REHİN DÜKKANI (Güneybatı - Yeşil Bölge)
+                            _buildMapStampButton(
+                              left: w * 0.16,
+                              top: h * 0.74,
                               title: '🛒 REHİN DÜKKANI',
-                              subtitle: 'Vitrin & Pazarlık',
                               accentColor: GameColors.profitGreen,
                               onTap: () => _navigateTo(const PawnShopScreen()),
                             ),
 
-                            // 🍺 6. KARA EJDER HANI (Güneydoğu)
-                            _buildMapDistrictNode(
-                              left: w * 0.54,
-                              top: h * 0.65,
-                              title: '🍺 KARA EJDER HANI',
-                              subtitle: 'Paralı Askerler & Zindan',
-                              accentColor: GameColors.gold,
-                              onTap: () => _navigateTo(const TavernScreen()),
-                            ),
-
-                            // 🔨 7. DEPO MEZATI (Merkez-Güney)
-                            _buildMapDistrictNode(
-                              left: w * 0.32,
-                              top: h * 0.81,
+                            // 🔨 7. DEPO MEZATI (Güney - Kahverengi Bölge)
+                            _buildMapStampButton(
+                              left: w * 0.40,
+                              top: h * 0.82,
                               title: '🔨 CANLI DEPO MEZATI',
-                              subtitle: 'Depo İhaleleri & Tetris',
                               accentColor: const Color(0xFFFF5252),
                               isImportant: true,
                               onTap: () => _navigateTo(const LiveAuctionScreen()),
                             ),
 
-                            // FTUE Yönlendirme Kılavuzu (Eve Ok Gösterir)
-                            if (isMapFTUE)
+                            // ⚔️ 8. ZİNDAN & SEFERLER (Doğu - Nehir Ötesi)
+                            _buildMapStampButton(
+                              left: w * 0.76,
+                              top: h * 0.38,
+                              title: '⚔️ ZİNDAN',
+                              accentColor: const Color(0xFFFF7043),
+                              onTap: () => _navigateTo(const DungeonHubScreen()),
+                            ),
+
+                            // Normal Modda Han ve Ev (FTUE sırasında altta çift kalmamaları için)
+                            if (!isTavernHiringFTUE)
+                              _buildMapStampButton(
+                                left: w * 0.66,
+                                top: h * 0.64,
+                                title: '🍺 KARA EJDER HANI',
+                                accentColor: GameColors.gold,
+                                onTap: () => _navigateTo(const TavernScreen()),
+                              ),
+
+                            if (!isMapIntroFTUE)
+                              _buildMapStampButton(
+                                left: w * 0.40,
+                                top: h * 0.45,
+                                title: '🏠 EV & KARARGAH',
+                                accentColor: GameColors.neonCyan,
+                                onTap: () => _navigateTo(const HomeScreen()),
+                              ),
+
+                            // 🌑 DİEGETİK SPOTLIGHT KARARTMA KATMANI (Hedef dışındaki tüm haritayı karartır)
+                            if (isAnyFTUE)
+                              Positioned.fill(
+                                child: IgnorePointer(
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 400),
+                                    color: Colors.black.withValues(alpha: 0.62),
+                                  ),
+                                ),
+                              ),
+
+                            // 🏠 1. EV & KARARGAH (FTUE: Karartmanın Üstüne Çıkar!)
+                            if (isMapIntroFTUE)
+                              _buildMapStampButton(
+                                left: w * 0.40,
+                                top: h * 0.45,
+                                title: '🏠 EV & KARARGAH',
+                                accentColor: GameColors.neonCyan,
+                                isHighlighted: true,
+                                onTap: () {
+                                  _navigateTo(
+                                    const HomeScreen(),
+                                    onBeforeNav: () {
+                                      ref.read(ftueProvider.notifier).setStep(FTUEStep.homeInventoryTransfer);
+                                    },
+                                  );
+                                },
+                              ),
+
+                            // 🍺 6. KARA EJDER HANI (FTUE: Karartmanın Üstüne Çıkar!)
+                            if (isTavernHiringFTUE)
+                              _buildMapStampButton(
+                                left: w * 0.66,
+                                top: h * 0.64,
+                                title: '🍺 KARA EJDER HANI',
+                                accentColor: GameColors.gold,
+                                isHighlighted: true,
+                                onTap: () => _navigateTo(const TavernScreen()),
+                              ),
+
+                            // FTUE Yönlendirme Kılavuzu (Üst Bilgi Başlığı)
+                            if (isMapIntroFTUE)
                               Positioned(
-                                left: w * 0.15,
-                                top: h * 0.06,
-                                right: w * 0.15,
+                                left: w * 0.20,
+                                top: h * 0.04,
+                                right: w * 0.20,
                                 child: const GuideArrowSpotlight(
-                                  text: 'Tebrikler! İlk deponu aldın. Şimdi eşyaları depolamak ve incelemek için EVE git!',
+                                  text: 'Tebrikler! İlk deponu aldın. Şimdi eşyaları depolamak ve satmak için EVE tıkla! 👇',
+                                ),
+                              ),
+
+                            if (isTavernHiringFTUE)
+                              Positioned(
+                                left: w * 0.20,
+                                top: h * 0.04,
+                                right: w * 0.20,
+                                child: const GuideArrowSpotlight(
+                                  text: 'Satıştan paranı kazandın! Şimdi ilk paralı askerini kiralamak için KARA EJDER HANI\'na tıkla! 👇',
                                 ),
                               ),
                           ],
@@ -265,12 +311,11 @@ class _CityMapScreenState extends ConsumerState<CityMapScreen>
     );
   }
 
-  /// Harita üzerindeki stilize organik bölge düğümü
-  Widget _buildMapDistrictNode({
+  /// Harita kağıdına basılmış gibi duran diegetik damga (stamp/mühür) butonu
+  Widget _buildMapStampButton({
     required double left,
     required double top,
     required String title,
-    required String subtitle,
     required Color accentColor,
     required VoidCallback onTap,
     bool isHighlighted = false,
@@ -280,58 +325,72 @@ class _CityMapScreenState extends ConsumerState<CityMapScreen>
       left: left,
       top: top,
       child: GestureDetector(
-        onTap: onTap,
+        onTap: () {
+          HapticFeedback.mediumImpact();
+          onTap();
+        },
         child: AnimatedBuilder(
           animation: _pulseAnimation,
           builder: (context, child) {
             final scale = isHighlighted ? _pulseAnimation.value : 1.0;
             return Transform.scale(
               scale: scale,
-              child: DiegeticMetalPanel(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                borderColor: isHighlighted ? GameColors.gold : accentColor,
-                borderWidth: isHighlighted ? 2.5 : 1.5,
-                glowColor: isHighlighted ? GameColors.gold : accentColor,
-                borderRadius: 10,
-                backgroundColor: const Color(0xFF141622).withValues(alpha: 0.94),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: accentColor,
-                            boxShadow: [
-                              BoxShadow(color: accentColor, blurRadius: 6),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          title,
-                          style: GameTypography.display(
-                            color: isHighlighted ? GameColors.goldLight : Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: GameTypography.body(
-                        color: Colors.white60,
-                        fontSize: 8,
-                      ),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1B1713).withValues(alpha: 0.92),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: isHighlighted ? GameColors.gold : accentColor,
+                    width: isHighlighted ? 2.5 : 1.6,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (isHighlighted ? GameColors.gold : Colors.black).withValues(alpha: isHighlighted ? 0.65 : 0.75),
+                      blurRadius: isHighlighted ? 14 : 6,
+                      spreadRadius: isHighlighted ? 2 : 0,
+                      offset: const Offset(0, 3),
                     ),
                   ],
+                ),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(3),
+                    border: Border.all(
+                      color: (isHighlighted ? GameColors.gold : accentColor).withValues(alpha: 0.35),
+                      width: 0.8,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 7,
+                        height: 7,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isHighlighted ? GameColors.gold : accentColor,
+                          boxShadow: [
+                            BoxShadow(
+                              color: isHighlighted ? GameColors.gold : accentColor,
+                              blurRadius: 4,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        title,
+                        style: GameTypography.display(
+                          color: isHighlighted ? GameColors.goldLight : const Color(0xFFFFF6E5),
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             );

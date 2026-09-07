@@ -488,25 +488,3 @@ class _TrunkGridWidgetState extends ConsumerState<TrunkGridWidget> {
   }
 }
 
-/// Pikap Açık Kasa Oluklu Çelik Zemin Deseni
-class _TruckBedRibPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final ribPaint = Paint()
-      ..color = Colors.black.withValues(alpha: 0.25)
-      ..strokeWidth = 3.0;
-
-    final highlightPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.05)
-      ..strokeWidth = 1.0;
-
-    // Dikey oluklu sac çizgileri
-    for (double x = 8; x < size.width; x += 14) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), ribPaint);
-      canvas.drawLine(Offset(x + 1.5, 0), Offset(x + 1.5, size.height), highlightPaint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}

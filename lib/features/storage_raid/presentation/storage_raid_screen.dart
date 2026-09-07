@@ -434,104 +434,120 @@ class _StorageRaidScreenState extends ConsumerState<StorageRaidScreen>
             // 1. Üst HUD Bar: Geri Sayım Sayacı, Cüzdan, Depo Bilgisi ve Debug Butonu
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Depo Başlığı & Arketip
-                  DiegeticMetalPanel(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    borderRadius: 8,
-                    showRivets: false,
+                  Flexible(
                     child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: GameColors.gold.withValues(alpha: 0.25),
-                            borderRadius: BorderRadius.circular(4),
-                            border: Border.all(color: GameColors.gold, width: 1),
-                          ),
-                          child: Text(
-                            _activeUnit?.unitNumber ?? '#204',
-                            style: GameTypography.display(
-                              color: GameColors.goldLight,
-                              fontSize: 11,
+                        // Depo Başlığı & Arketip
+                        Flexible(
+                          child: DiegeticMetalPanel(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                            borderRadius: 8,
+                            showRivets: false,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: GameColors.gold.withValues(alpha: 0.25),
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(color: GameColors.gold, width: 1),
+                                  ),
+                                  child: Text(
+                                    _activeUnit?.unitNumber ?? '#204',
+                                    style: GameTypography.display(
+                                      color: GameColors.goldLight,
+                                      fontSize: 10,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    _activeUnit?.archetype.label ?? 'Karma Depo',
+                                    overflow: TextOverflow.ellipsis,
+                                    style: GameTypography.display(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
                         const SizedBox(width: 6),
-                        Text(
-                          _activeUnit?.archetype.label ?? 'Karma Depo',
-                          style: GameTypography.display(
-                            color: Colors.white,
-                            fontSize: 11,
+
+                        // Cüzdan Göstergesi
+                        DiegeticMetalPanel(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                          borderRadius: 8,
+                          showRivets: false,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.account_balance_wallet, color: GameColors.profitGreen, size: 13),
+                              const SizedBox(width: 3),
+                              Text(
+                                '${playerState.cash} ₺',
+                                style: GameTypography.led(
+                                  color: GameColors.profitGreen,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
 
-                  // Cüzdan Göstergesi
-                  DiegeticMetalPanel(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    borderRadius: 8,
-                    showRivets: false,
-                    child: Row(
-                      children: [
-                        const Icon(Icons.account_balance_wallet, color: GameColors.profitGreen, size: 14),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${playerState.cash} ₺',
-                          style: GameTypography.led(
-                            color: GameColors.profitGreen,
+                  // Sağ Grup: Debug + Canlı Kalan Süre Sayacı
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        tooltip: 'Geliştirici Test Modu',
+                        icon: const Icon(Icons.bug_report, color: GameColors.neonCyan, size: 20),
+                        onPressed: () {
+                          DebugConsoleSheet.show(
+                            context,
+                            onAddTime: () => setState(() => _game?.addExtraTime(60)),
+                            onAutoPackAll: _handleDebugAutoPackAll,
+                            onScrapAll: _handleDebugScrapAll,
+                            onToggleGrid: () => setState(() => _game?.toggleDebugGrid()),
+                            isGridVisible: _game?.showDebugGrid ?? false,
+                          );
+                        },
+                      ),
+                      const SizedBox(width: 6),
+                      ValueListenableBuilder<int>(
+                        valueListenable: _game!.remainingSeconds,
+                        builder: (context, seconds, _) {
+                          final isUrgent = seconds <= 10;
+                          return RetroLedDisplay(
+                            icon: Icons.timer,
+                            value: _game!.isTimerPaused ? 'YANAŞIYOR...' : '$seconds SN',
+                            ledColor: _game!.isTimerPaused
+                                ? GameColors.hazardYellow
+                                : (isUrgent ? GameColors.lossRed : GameColors.neonCyan),
                             fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const Spacer(),
-
-                  // 🛠️ Hızlı Debug Modu Butonu
-                  IconButton(
-                    tooltip: 'Geliştirici Test Modu',
-                    icon: const Icon(Icons.bug_report, color: GameColors.neonCyan, size: 22),
-                    onPressed: () {
-                      DebugConsoleSheet.show(
-                        context,
-                        onAddTime: () => setState(() => _game?.addExtraTime(60)),
-                        onAutoPackAll: _handleDebugAutoPackAll,
-                        onScrapAll: _handleDebugScrapAll,
-                        onToggleGrid: () => setState(() => _game?.toggleDebugGrid()),
-                        isGridVisible: _game?.showDebugGrid ?? false,
-                      );
-                    },
-                  ),
-                  const SizedBox(width: 4),
-
-                  // Canlı Kalan Süre Sayacı
-                  ValueListenableBuilder<int>(
-                    valueListenable: _game!.remainingSeconds,
-                    builder: (context, seconds, _) {
-                      final isUrgent = seconds <= 10;
-                      return RetroLedDisplay(
-                        icon: Icons.timer,
-                        value: _game!.isTimerPaused ? 'YANAŞIYOR...' : '$seconds SN',
-                        ledColor: _game!.isTimerPaused
-                            ? GameColors.hazardYellow
-                            : (isUrgent ? GameColors.lossRed : GameColors.neonCyan),
-                        fontSize: 13,
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      );
-                    },
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-          ),
 
             // Sarı-Siyah Tehlike İkaz Şeridi
             const Padding(

@@ -1045,206 +1045,6 @@ class _LiveAuctionScreenState extends ConsumerState<LiveAuctionScreen>
       ),
     );
   }
-
-  /// Gözlem Süresi Alt Kontrol Paneli
-  Widget _buildInspectionActionPanel(int playerCash) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: const BoxDecoration(
-        color: GameColors.surface,
-        border: Border(top: BorderSide(color: GameColors.panelBorder, width: 2)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          RetroLedDisplay(
-            label: 'CÜZDAN',
-            value: '$playerCash ₺',
-            ledColor: GameColors.profitGreen,
-            fontSize: 15,
-          ),
-          ArcadeButton(
-            text: 'HEMEN BAŞLAT ⚡',
-            icon: Icons.fast_forward,
-            onPressed: () {
-              _countdownTimer?.cancel();
-              _startBiddingPhase();
-            },
-            primaryColor: GameColors.gold,
-            shadowColor: const Color(0xFF8C711C),
-            height: 44,
-            fontSize: 12,
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 3D Arcade Oyuncu Teklif Pedalları & Konsolu
-  Widget _buildPlayerBiddingControls(int playerCash) {
-    String? guidePrompt;
-    if (_isScripted && !_isPlayerHighest) {
-      if (_scriptedStep == 0 && _currentBid == 150) {
-        guidePrompt = 'İlk teklifini (200 ₺) vererek açık artırmaya katıl!';
-      } else if (_scriptedStep == 1 && _currentBid == 300) {
-        guidePrompt = 'Rakipler bastırıyor! 350 ₺ basarak öne geç!';
-      } else if (_scriptedStep == 2 && _currentBid == 400) {
-        guidePrompt = 'Son hamle! 450 ₺ teklif ver ve depoyu kapat!';
-      }
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: const BoxDecoration(
-        color: GameColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
-        border: Border(
-          top: BorderSide(color: GameColors.panelBorder, width: 2),
-        ),
-        boxShadow: [
-          BoxShadow(color: Colors.black87, blurRadius: 14, offset: Offset(0, -4)),
-        ],
-      ),
-      child: Column(
-        children: [
-          if (guidePrompt != null) ...[
-            GuideArrowSpotlight(
-              text: guidePrompt,
-            ),
-            const SizedBox(height: 8),
-          ],
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              RetroLedDisplay(
-                label: 'CÜZDAN',
-                value: '$playerCash ₺',
-                ledColor: GameColors.profitGreen,
-                fontSize: 13,
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              ),
-              RetroLedDisplay(
-                label: 'SIRADAKİ',
-                value: '${_currentBid + 50} ₺',
-                ledColor: GameColors.neonCyan,
-                fontSize: 13,
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              // +50 ₺ Standart Teklif Pedalı
-              Expanded(
-                flex: 2,
-                child: ArcadeButton(
-                  text: '+50 ₺ BAS (${_currentBid + 50} ₺)',
-                  icon: Icons.gavel,
-                  onPressed: () => _playerBid(50),
-                  primaryColor: GameColors.profitGreen,
-                  shadowColor: const Color(0xFF00893E),
-                  height: 50,
-                  fontSize: 12,
-                ),
-              ),
-              if (!_isScripted) ...[
-                const SizedBox(width: 10),
-                // +150 ₺ Agresif Teklif Pedalı
-                Expanded(
-                  flex: 2,
-                  child: ArcadeButton(
-                    text: '+150 ₺ BÜYÜK BAS',
-                    icon: Icons.trending_up,
-                    onPressed: () => _playerBid(150),
-                    primaryColor: GameColors.alertOrange,
-                    shadowColor: const Color(0xFFB24800),
-                    height: 50,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Müzayede Bitiş & Sonuç Paneli
-  Widget _buildAuctionResultPanel() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: _playerWon ? const Color(0xFF132A18) : const Color(0xFF2C1414),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        border: Border(
-          top: BorderSide(
-            color: _playerWon ? GameColors.profitGreen : GameColors.lossRed,
-            width: 2,
-          ),
-        ),
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                _playerWon ? Icons.emoji_events : Icons.sentiment_dissatisfied,
-                color: _playerWon ? GameColors.gold : GameColors.lossRed,
-                size: 28,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                _playerWon ? 'DEPOYU KAZANDINIZ! 🏆' : 'İHALE KAYBEDİLDİ!',
-                style: GameTypography.display(
-                  color: _playerWon ? GameColors.profitGreen : GameColors.lossRed,
-                  fontSize: 17,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            _playerWon
-                ? 'Son Teklif: $_currentBid ₺ ödendi. İçeri girip yağmaya başla!'
-                : 'Depo $_highestBidderName tarafından alındı. Şansını yeni depoda dene.',
-            style: GameTypography.body(
-              color: Colors.white70,
-              fontSize: 12,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 12),
-          ArcadeButton(
-            text: _playerWon ? 'İÇERİ GİR VE YAĞMALA 🔓' : 'YENİ İHALEYE GİR 🔄',
-            icon: _playerWon ? Icons.door_front_door : Icons.refresh,
-            onPressed: () {
-              if (_playerWon) {
-                // Kazanılan AYNI depoya gir
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => StorageRaidScreen(storageUnit: _currentUnit),
-                  ),
-                );
-              } else {
-                setState(() {
-                  _isPlayerHighest = false;
-                  _shutterController.reset();
-                  _loadNewStorageUnit();
-                });
-              }
-            },
-            primaryColor: _playerWon ? GameColors.gold : Colors.white24,
-            shadowColor: _playerWon ? const Color(0xFF8C711C) : Colors.black45,
-            height: 50,
-            fontSize: 13,
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 /// Gerçekçi 3D Perspektif Depo İç Ortamı (Tavan, Yan Duvarlar, Arka Duvar, Beton Zemin ve Işık Huzmesi)
@@ -1381,5 +1181,92 @@ class _StoragePreviewEnvironmentPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+/// Endüstriyel Çelik / Alüminyum Sarmal Kepenk (Roller Shutter) Animasyon Çizicisi
+class _RollerShutterPainter extends CustomPainter {
+  final double progress; // 0.0 (tam kapalı) -> 1.0 (tam açık)
+
+  const _RollerShutterPainter({required this.progress});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (progress >= 1.0) return; // Tamamen açıldıysa çizmeye gerek yok
+
+    final w = size.width;
+    final h = size.height;
+    final shutterHeight = (1.0 - progress) * h;
+
+    if (shutterHeight <= 0) return;
+
+    final shutterRect = Rect.fromLTWH(0, 0, w, shutterHeight);
+
+    // 1. Kepenk Metalik Gövde Gradyanı (Endüstriyel gri / paslanmaz çelik)
+    final bodyPaint = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
+        colors: [
+          Color(0xFF2E3036),
+          Color(0xFF424650),
+          Color(0xFF2A2C32),
+          Color(0xFF383B44),
+          Color(0xFF222428),
+        ],
+        stops: [0.0, 0.25, 0.5, 0.75, 1.0],
+      ).createShader(shutterRect);
+    canvas.drawRect(shutterRect, bodyPaint);
+
+    // 2. Yatay Sarmal Dilimleri / Kepenk Kanatları (Slat Lines)
+    const slatHeight = 12.0;
+    final slatDarkPaint = Paint()
+      ..color = Colors.black.withValues(alpha: 0.6)
+      ..strokeWidth = 2.0;
+    final slatLightPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.15)
+      ..strokeWidth = 1.0;
+
+    for (double y = 0; y < shutterHeight; y += slatHeight) {
+      canvas.drawLine(Offset(0, y), Offset(w, y), slatDarkPaint);
+      if (y + 1 < shutterHeight) {
+        canvas.drawLine(Offset(0, y + 1.5), Offset(w, y + 1.5), slatLightPaint);
+      }
+    }
+
+    // 3. Alt Etek / Kilit Çelik Laması (Heavy Bottom Bar)
+    const bottomBarHeight = 14.0;
+    final bottomBarY = shutterHeight - bottomBarHeight;
+    if (bottomBarY > 0) {
+      final barRect = Rect.fromLTWH(0, bottomBarY, w, bottomBarHeight);
+      final barPaint = Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF555B66), Color(0xFF1E2024)],
+        ).createShader(barRect);
+      canvas.drawRect(barRect, barPaint);
+
+      // Kilit tutamağı / sarı ikaz çizgisi
+      final cautionPaint = Paint()
+        ..color = const Color(0xFFFFB300).withValues(alpha: 0.8)
+        ..strokeWidth = 3.0;
+      canvas.drawLine(
+        Offset(w * 0.35, bottomBarY + bottomBarHeight / 2),
+        Offset(w * 0.65, bottomBarY + bottomBarHeight / 2),
+        cautionPaint,
+      );
+    }
+
+    // 4. Sol ve Sağ Yan Kılavuz Rayları (Side Guides)
+    const railWidth = 8.0;
+    final railPaint = Paint()..color = const Color(0xFF1B1C20);
+    canvas.drawRect(Rect.fromLTWH(0, 0, railWidth, shutterHeight), railPaint);
+    canvas.drawRect(Rect.fromLTWH(w - railWidth, 0, railWidth, shutterHeight), railPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _RollerShutterPainter oldDelegate) {
+    return oldDelegate.progress != progress;
+  }
 }
 

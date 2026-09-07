@@ -10,6 +10,7 @@ import 'package:yeni_oyun_sablon/core/widgets/diegetic_metal_panel.dart';
 import 'package:yeni_oyun_sablon/core/widgets/retro_led_display.dart';
 import 'package:yeni_oyun_sablon/features/crafting_benches/presentation/crafting_bench_screen.dart';
 import 'package:yeni_oyun_sablon/features/dungeon/models/mercenary_model.dart';
+import 'package:yeni_oyun_sablon/features/dungeon/presentation/dungeon_hub_screen.dart';
 import 'package:yeni_oyun_sablon/features/dungeon/presentation/widgets/dungeon_equipment_guide_sheet.dart';
 import 'package:yeni_oyun_sablon/features/dungeon/providers/dungeon_expedition_provider.dart';
 import 'package:yeni_oyun_sablon/features/marketplace/models/web_listing_model.dart';
@@ -46,10 +47,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final ftue = ref.read(ftueProvider);
     if (ftue == FTUEStep.homeInventoryTransfer) {
       startTab = 2; // Atölye & Depo
-    } else if (ftue == FTUEStep.gearAndNpcIntro || ftue == FTUEStep.restRoomEquip) {
-      startTab = 1; // Dinlenme Odası
     } else if (ftue == FTUEStep.marketplaceFirstSale) {
       startTab = 0; // Çalışma Odası
+    } else if (ftue == FTUEStep.gearAndNpcIntro ||
+        ftue == FTUEStep.tavernHiring ||
+        ftue == FTUEStep.restRoomEquip) {
+      startTab = 1; // Dinlenme Odası
     }
 
     _tabController = TabController(
@@ -143,6 +146,114 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 textColor: Colors.black,
                 height: 42,
                 fontSize: 11,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// FTUE Büyülü Savaş Ekipmanı Koruma Açıklama Diyaloğu
+  void _showProtectedGearExplanationDialog(ItemModel item) {
+    HapticFeedback.mediumImpact();
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: DiegeticMetalPanel(
+          padding: const EdgeInsets.all(18),
+          borderColor: GameColors.gold,
+          borderWidth: 2,
+          glowColor: GameColors.gold,
+          borderRadius: 16,
+          backgroundColor: const Color(0xFF14141E).withValues(alpha: 0.98),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.shield, color: GameColors.gold, size: 44),
+              const SizedBox(height: 10),
+              Text(
+                '🛡️ BÜYÜLÜ SAVAŞ EKİPMANI (KORUMALI)',
+                style: GameTypography.display(
+                  color: GameColors.goldLight,
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Bu kadim bir savaş ekipmanıdır (${item.nameTr})!\n\nBu nadide parçayı internette üç kuruşa satamazsın. Birazdan normal eşyaları satıp kazandığımız parayla Han\'dan kiralayacağımız paralı askerimize bu ekipmanı giydirip zindan seferlerine göndereceğiz!',
+                style: GameTypography.body(color: Colors.white, fontSize: 11),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ArcadeButton(
+                text: 'ANLADIM, NORMAL EŞYA SATACAĞIM 👍',
+                icon: Icons.check,
+                onPressed: () => Navigator.of(ctx).pop(),
+                primaryColor: GameColors.gold,
+                shadowColor: const Color(0xFF8C711C),
+                textColor: Colors.black,
+                height: 40,
+                fontSize: 11,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// İlk Satış Başarılı & Han'a Yönlendirme Modalı (FTUE)
+  void _showFTUESaleCelebrationDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: DiegeticMetalPanel(
+          padding: const EdgeInsets.all(20),
+          borderColor: GameColors.profitGreen,
+          borderWidth: 2.5,
+          glowColor: GameColors.profitGreen,
+          borderRadius: 16,
+          backgroundColor: const Color(0xFF14141E).withValues(alpha: 0.98),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.monetization_on, color: GameColors.profitGreen, size: 54),
+              const SizedBox(height: 12),
+              Text(
+                'İLK SATIŞ TAMAMLANDI! 💰🎉',
+                style: GameTypography.display(
+                  color: GameColors.profitGreen,
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Tebrikler! İnternet pazarında ilk satışını yaptın ve kasanı doldurdun!\n\nArtık bir paralı asker tutacak kadar bütçen var. Şimdi o satmadığımız BÜYÜLÜ SAVAŞ EKİPMANI\'nı kuşanacak bir savaşçı kiralamak için Kara Ejder Hanı\'na gidelim!',
+                style: GameTypography.body(color: Colors.white, fontSize: 12),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 18),
+              ArcadeButton(
+                text: 'DİNLENME ODASINA GEÇ 🛌',
+                icon: Icons.hotel,
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                  ref.read(ftueProvider.notifier).setStep(FTUEStep.tavernHiring);
+                  _tabController.animateTo(1); // Dinlenme Odasına geç
+                },
+                primaryColor: GameColors.gold,
+                shadowColor: const Color(0xFF8C711C),
+                textColor: Colors.black,
+                height: 44,
+                fontSize: 12,
               ),
             ],
           ),
@@ -272,7 +383,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         children: [
           if (isFTUEMarket) ...[
             const GuideArrowSpotlight(
-              text: 'Çalışma Odasına hoş geldin! Aşağıdaki Ev Deposundan bir eşyayı seçip "İLANA KOY" diyerek ilk satışını başlat.',
+              text: 'Çalışma Odasına hoş geldin! Aşağıdaki Ev Deposundan normal bir eşyayı seçip "İLANA KOY" diyerek ilk satışını başlat ve kasanı doldur. (Büyülü savaş eşyaları korumalıdır, onları satamazsın!)',
             ),
             const SizedBox(height: 8),
           ],
@@ -366,37 +477,80 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               itemCount: _homeStorageItems.length,
               itemBuilder: (context, index) {
                 final item = _homeStorageItems[index];
+                final isGear = DungeonEquipmentGuideSheet.isEquipableDungeonGear(item);
+
                 return Container(
                   margin: const EdgeInsets.only(bottom: 6),
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: const Color(0xFF1E202B),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.white12),
+                    border: Border.all(
+                      color: isGear && isFTUEMarket
+                          ? GameColors.gold.withValues(alpha: 0.5)
+                          : Colors.white12,
+                    ),
                   ),
                   child: Row(
                     children: [
-                      Image.asset(item.spritePath, width: 36, height: 36, fit: BoxFit.contain, errorBuilder: (_, _, _) => const Icon(Icons.inventory_2, color: Colors.amber)),
+                      Image.asset(
+                        item.spritePath,
+                        width: 36,
+                        height: 36,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, _, _) => const Icon(Icons.inventory_2, color: Colors.amber),
+                      ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(item.nameTr, style: GameTypography.display(color: Colors.white, fontSize: 11)),
+                            Row(
+                              children: [
+                                Text(item.nameTr, style: GameTypography.display(color: Colors.white, fontSize: 11)),
+                                if (isGear && isFTUEMarket) ...[
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                    decoration: BoxDecoration(
+                                      color: GameColors.gold.withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(4),
+                                      border: Border.all(color: GameColors.gold, width: 0.8),
+                                    ),
+                                    child: const Text(
+                                      '🛡️ BÜYÜLÜ',
+                                      style: TextStyle(color: GameColors.goldLight, fontSize: 8, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
                             Text('Taban Değer: ${item.baseValue} ₺', style: GameTypography.body(color: Colors.white54, fontSize: 10)),
                           ],
                         ),
                       ),
-                      ArcadeButton(
-                        text: 'İLANA KOY 💻',
-                        icon: Icons.upload_file,
-                        onPressed: () => _showCreateListingDialog(item),
-                        primaryColor: GameColors.neonCyan,
-                        shadowColor: const Color(0xFF00838F),
-                        textColor: Colors.black,
-                        height: 34,
-                        fontSize: 10,
-                      ),
+                      if (isGear && isFTUEMarket)
+                        ArcadeButton(
+                          text: '🔒 SATILAMAZ',
+                          icon: Icons.shield,
+                          onPressed: () => _showProtectedGearExplanationDialog(item),
+                          primaryColor: const Color(0xFF3E2723),
+                          shadowColor: Colors.black,
+                          textColor: GameColors.goldLight,
+                          height: 34,
+                          fontSize: 10,
+                        )
+                      else
+                        ArcadeButton(
+                          text: 'İLANA KOY 💻',
+                          icon: Icons.upload_file,
+                          onPressed: () => _showCreateListingDialog(item),
+                          primaryColor: GameColors.neonCyan,
+                          shadowColor: const Color(0xFF00838F),
+                          textColor: Colors.black,
+                          height: 34,
+                          fontSize: 10,
+                        ),
                     ],
                   ),
                 );
@@ -604,8 +758,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   void _handleFTUESaleCompleted() {
     if (ref.read(ftueProvider) == FTUEStep.marketplaceFirstSale) {
-      ref.read(ftueProvider.notifier).setStep(FTUEStep.completed);
-      _showFTUECompletedCelebrationDialog();
+      _showFTUESaleCelebrationDialog();
     }
   }
 
@@ -639,7 +792,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               ),
               const SizedBox(height: 10),
               Text(
-                'İlk müzayedeni kazandın, eşyaları istifledin, büyülü savaş ekipmanı kuşanıp paralı asker tuttun ve ilk internet satışını yaptın!\n\nArtık tüm şehir emrinde. Canlı Depo Mezatına giderek imparatorluğunu kurmaya başlayabilirsin!',
+                'İlk müzayedeni kazandın, eşyaları istifledin, internet pazarında satıp paranı kazandın, Han\'dan paralı asker kiraladın ve ona kadim savaş ekipmanını kuşandın!\n\nArtık tüm şehir emrinde. Canlı Depo Mezatına giderek imparatorluğunu kurmaya başlayabilir veya otomatik zindan seferlerine çıkabilirsin!',
                 style: GameTypography.body(color: Colors.white, fontSize: 12),
                 textAlign: TextAlign.center,
               ),
@@ -665,6 +818,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   void _showCreateListingDialog(ItemModel item) {
+    if (ref.read(ftueProvider) == FTUEStep.marketplaceFirstSale &&
+        DungeonEquipmentGuideSheet.isEquipableDungeonGear(item)) {
+      _showProtectedGearExplanationDialog(item);
+      return;
+    }
+
     double markup = 1.0;
     showDialog(
       context: context,
@@ -769,138 +928,676 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   // ==========================================
-  // 2. 🛌 DİNLENME ODASI (Lounge & Auto-Expedition)
+  // 2. 🛌 DİNLENME ODASI (Lounge & Auto-Expedition - %100 Görsel & Tıklanabilir)
   // ==========================================
   Widget _buildLoungeTab() {
     final dungeonState = ref.watch(dungeonProvider);
     final profile = ref.watch(playerProfileProvider);
+    final ftue = ref.watch(ftueProvider);
+    final mercs = dungeonState.mercenaries;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Konfor ve Kapasite Bilgi Paneli
-          DiegeticMetalPanel(
-            padding: const EdgeInsets.all(12),
-            borderColor: GameColors.gold,
-            borderWidth: 2,
-            child: Row(
-              children: [
-                const Icon(Icons.bed, color: GameColors.gold, size: 36),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('🛌 KIŞLA & DİNLENME ODASI', style: GameTypography.display(color: Colors.white, fontSize: 13)),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Kapasite: ${dungeonState.mercenaries.length} / ${profile.maxMercenaryCapacity} Asker • Konfor Skoru: ${dungeonState.lounge.totalComfortScore}',
-                        style: GameTypography.body(color: GameColors.goldLight, fontSize: 11),
+    String baseImage = mercs.isNotEmpty ? _getMercenaryBedAsset(mercs[0].role) : GameAssetPaths.bgBarracksEmpty;
+    String? rightMercImage = mercs.length >= 2 ? _getMercenaryBedAsset(mercs[1].role) : null;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final w = constraints.maxWidth;
+        final h = constraints.maxHeight;
+
+        return Stack(
+          children: [
+            // 1. SOL YATAK & ANA ODA ZEMİNİ (Tam Ekran Görsel)
+            Positioned.fill(
+              child: Image.asset(
+                baseImage,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  color: const Color(0xFF161822),
+                  child: const Center(
+                    child: Icon(Icons.hotel, color: GameColors.gold, size: 60),
+                  ),
+                ),
+              ),
+            ),
+
+            // 2. SAĞ YATAK İÇİN 2. ASKER (Sağ yarıya aynalanmış görsel)
+            if (rightMercImage != null)
+              Positioned(
+                right: 0,
+                top: 0,
+                bottom: 0,
+                width: w * 0.5,
+                child: ClipRect(
+                  child: OverflowBox(
+                    alignment: Alignment.centerRight,
+                    minWidth: w,
+                    maxWidth: w,
+                    minHeight: h,
+                    maxHeight: h,
+                    child: Transform.scale(
+                      scaleX: -1,
+                      child: Image.asset(
+                        rightMercImage,
+                        fit: BoxFit.cover,
+                        width: w,
+                        height: h,
                       ),
+                    ),
+                  ),
+                ),
+              ),
+
+            // 3. SİNEMATİK VİGNETTE VE KARARTMA
+            Positioned.fill(
+              child: IgnorePointer(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withValues(alpha: 0.5),
+                        Colors.transparent,
+                        Colors.black.withValues(alpha: 0.7),
+                      ],
+                      stops: const [0.0, 0.4, 1.0],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            // 4. İNTERAKTİF DOKUNMA ALANI (SOL RANZA / 1. ASKER)
+            Positioned(
+              left: 0,
+              top: 0,
+              width: w * 0.5,
+              bottom: 0,
+              child: _buildBedInteractiveArea(
+                slotIndex: 0,
+                merc: mercs.isNotEmpty ? mercs[0] : null,
+                dungeonState: dungeonState,
+                isLeft: true,
+                isFTUEHighlight: ftue == FTUEStep.restRoomEquip || (ftue == FTUEStep.tavernHiring && mercs.isEmpty),
+              ),
+            ),
+
+            // 5. İNTERAKTİF DOKUNMA ALANI (SAĞ RANZA / 2. ASKER)
+            Positioned(
+              right: 0,
+              top: 0,
+              width: w * 0.5,
+              bottom: 0,
+              child: _buildBedInteractiveArea(
+                slotIndex: 1,
+                merc: mercs.length >= 2 ? mercs[1] : null,
+                dungeonState: dungeonState,
+                isLeft: false,
+                isFTUEHighlight: false,
+              ),
+            ),
+
+            // 6. ÜST DIEGETIC ODA BİLGİ VE KISAYOL ÇUBUĞU
+            Positioned(
+              top: 10,
+              left: 12,
+              right: 12,
+              child: Row(
+                children: [
+                  // Kapasite & Konfor Göstergesi
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.82),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: GameColors.gold.withValues(alpha: 0.5), width: 1.5),
+                      boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 6)],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.hotel, color: GameColors.gold, size: 16),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Kapasite: ${mercs.length} / ${profile.maxMercenaryCapacity}',
+                          style: GameTypography.display(color: Colors.white, fontSize: 11),
+                        ),
+                        const SizedBox(width: 8),
+                        const Text('•', style: TextStyle(color: Colors.white38)),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.star, color: GameColors.goldLight, size: 14),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Konfor: ${dungeonState.lounge.totalComfortScore}',
+                          style: GameTypography.body(color: GameColors.goldLight, fontSize: 11),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Spacer(),
+                  // Aktif Sefer Sürüyorsa Canlı Gösterge
+                  if (dungeonState.activeExpedition != null) ...[
+                    Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFC2410C).withValues(alpha: 0.9),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: GameColors.gold, width: 1),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.timer, color: Colors.white, size: 14),
+                          const SizedBox(width: 5),
+                          Text(
+                            'SEFER SÜRÜYOR: ${dungeonState.activeExpedition!.remainingSeconds}s',
+                            style: GameTypography.display(color: Colors.white, fontSize: 10),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  // Han Kısayolu Butonu
+                  ArcadeButton(
+                    text: 'HAN 🍺',
+                    icon: Icons.local_bar,
+                    onPressed: () {
+                      HapticFeedback.mediumImpact();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const TavernScreen()),
+                      );
+                    },
+                    primaryColor: GameColors.gold,
+                    shadowColor: const Color(0xFF8C711C),
+                    textColor: Colors.black,
+                    height: 32,
+                    fontSize: 10,
+                  ),
+                  const SizedBox(width: 8),
+                  // Zindan Komuta Merkezi
+                  ArcadeButton(
+                    text: 'ZİNDANLAR ⚔️',
+                    icon: Icons.castle,
+                    onPressed: () {
+                      HapticFeedback.heavyImpact();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const DungeonHubScreen()),
+                      );
+                    },
+                    primaryColor: const Color(0xFFB91C1C),
+                    shadowColor: const Color(0xFF7F1D1D),
+                    textColor: Colors.white,
+                    height: 32,
+                    fontSize: 10,
+                  ),
+                ],
+              ),
+            ),
+
+            // 7. FTUE REHBER SPOTLIGHT
+            if (ftue == FTUEStep.restRoomEquip && mercs.isNotEmpty)
+              Positioned(
+                left: 30,
+                bottom: 85,
+                child: const GuideArrowSpotlight(
+                  text: 'Savaşçına dokun ve açılan menüden büyülü eşyayı kuşan!',
+                ),
+              ),
+            if (ftue == FTUEStep.tavernHiring && mercs.isEmpty)
+              Positioned(
+                left: 30,
+                bottom: 85,
+                child: const GuideArrowSpotlight(
+                  text: 'Ranzaya dokunarak veya üstteki HAN butonundan ilk savaşçını kirala!',
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Ranza & Karakter İnteraktif Dokunma Alanı
+  Widget _buildBedInteractiveArea({
+    required int slotIndex,
+    required MercenaryModel? merc,
+    required DungeonState dungeonState,
+    required bool isLeft,
+    required bool isFTUEHighlight,
+  }) {
+    final hasMerc = merc != null;
+    String statusLabel = 'BOŞ RANZA';
+    Color statusColor = Colors.white54;
+    IconData statusIcon = Icons.bed;
+
+    if (hasMerc) {
+      if (merc.status == MercenaryStatus.ready) {
+        statusLabel = 'HAZIR';
+        statusColor = GameColors.profitGreen;
+        statusIcon = Icons.check_circle_outline;
+      } else if (merc.status == MercenaryStatus.onExpedition) {
+        statusLabel = 'SEFERDE';
+        statusColor = GameColors.alertOrange;
+        statusIcon = Icons.explore;
+      } else {
+        statusLabel = 'DİNLENİYOR (${merc.restTimeRemainingSeconds}s)';
+        statusColor = GameColors.hazardYellow;
+        statusIcon = Icons.bedtime;
+      }
+    }
+
+    return InkWell(
+      onTap: () {
+        HapticFeedback.mediumImpact();
+        if (hasMerc) {
+          _showMercenaryActionModal(merc);
+        } else {
+          _showEmptyBedModal(slotIndex);
+        }
+      },
+      splashColor: GameColors.gold.withValues(alpha: 0.15),
+      highlightColor: GameColors.gold.withValues(alpha: 0.08),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          crossAxisAlignment: isLeft ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.85),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isFTUEHighlight
+                      ? GameColors.gold
+                      : (hasMerc ? statusColor : Colors.white24),
+                  width: isFTUEHighlight ? 2.5 : 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: isFTUEHighlight
+                        ? GameColors.gold.withValues(alpha: 0.4)
+                        : Colors.black87,
+                    blurRadius: isFTUEHighlight ? 12 : 6,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: isLeft ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (!isLeft) ...[
+                        Text(
+                          hasMerc ? merc.name : 'Ranza #${slotIndex + 1}',
+                          style: GameTypography.display(color: Colors.white, fontSize: 12),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(hasMerc ? merc.avatar : '🛌', style: const TextStyle(fontSize: 20)),
+                      ] else ...[
+                        Text(hasMerc ? merc.avatar : '🛌', style: const TextStyle(fontSize: 20)),
+                        const SizedBox(width: 8),
+                        Text(
+                          hasMerc ? merc.name : 'Ranza #${slotIndex + 1}',
+                          style: GameTypography.display(color: Colors.white, fontSize: 12),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(statusIcon, color: statusColor, size: 13),
+                      const SizedBox(width: 4),
                       Text(
-                        'Seferden dönen askerler ganimetleri DOĞRUDAN Ev Deposuna getirir (Altın yok, eşya ganimeti).',
-                        style: GameTypography.body(color: Colors.white60, fontSize: 10),
+                        statusLabel,
+                        style: GameTypography.display(color: statusColor, fontSize: 10),
+                      ),
+                      if (hasMerc) ...[
+                        const SizedBox(width: 6),
+                        Text('• ${merc.role}', style: const TextStyle(color: Colors.white60, fontSize: 10)),
+                        const SizedBox(width: 6),
+                        Text('${merc.totalCombatPower} CP', style: const TextStyle(color: GameColors.gold, fontSize: 10, fontWeight: FontWeight.bold)),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 5),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: GameColors.gold.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.touch_app, color: GameColors.goldLight, size: 12),
+                        const SizedBox(width: 4),
+                        Text(
+                          hasMerc ? 'DOKUN VE YÖNET 👆' : 'ASKER KİRALA 🍺',
+                          style: GameTypography.display(color: GameColors.goldLight, fontSize: 9),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Boş Ranza Tıklama Modalı
+  void _showEmptyBedModal(int slotIndex) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: DiegeticMetalPanel(
+          padding: const EdgeInsets.all(18),
+          borderColor: GameColors.gold,
+          borderWidth: 2,
+          glowColor: GameColors.gold,
+          borderRadius: 16,
+          backgroundColor: const Color(0xFF14141E).withValues(alpha: 0.98),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('🛌', style: TextStyle(fontSize: 40)),
+              const SizedBox(height: 8),
+              Text(
+                'BOŞ RANZA (SLOT ${slotIndex + 1})',
+                style: GameTypography.display(color: GameColors.goldLight, fontSize: 13),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Bu yatak şu anda boş. Kara Ejder Hanı\'na giderek kiralayacağınız yeni savaşçılar doğrudan bu odaya yerleşir ve zindanlara sefere çıkar.',
+                textAlign: TextAlign.center,
+                style: GameTypography.body(color: Colors.white70, fontSize: 11),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: const Text('KAPAT', style: TextStyle(color: Colors.white54, fontSize: 11)),
+                  ),
+                  const SizedBox(width: 8),
+                  ArcadeButton(
+                    text: 'HANA GİT 🍺',
+                    icon: Icons.local_bar,
+                    onPressed: () {
+                      Navigator.of(ctx).pop();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const TavernScreen()),
+                      );
+                    },
+                    primaryColor: GameColors.gold,
+                    shadowColor: const Color(0xFF8C711C),
+                    textColor: Colors.black,
+                    height: 38,
+                    fontSize: 11,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Asker Üzerine Tıklandığında Açılan Diegetik Aksiyon Menüsü
+  void _showMercenaryActionModal(MercenaryModel merc) {
+    final dungeonState = ref.read(dungeonProvider);
+    final isReady = merc.status == MercenaryStatus.ready;
+    final isOnExpedition = merc.status == MercenaryStatus.onExpedition;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: DiegeticMetalPanel(
+          padding: const EdgeInsets.all(18),
+          borderColor: isReady ? GameColors.profitGreen : GameColors.gold,
+          borderWidth: 2,
+          glowColor: isReady ? GameColors.profitGreen : null,
+          borderRadius: 16,
+          backgroundColor: const Color(0xFF14141E).withValues(alpha: 0.98),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Üst Karakter Özeti
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.black45,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: GameColors.gold, width: 1.5),
+                    ),
+                    child: Text(merc.avatar, style: const TextStyle(fontSize: 32)),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(merc.name, style: GameTypography.display(color: Colors.white, fontSize: 14)),
+                        Text('${merc.role} • ${merc.totalCombatPower} CP Güç', style: GameTypography.body(color: GameColors.goldLight, fontSize: 11)),
+                        Text('Kuşanılan Eşya: ${merc.equippedItems.length} adet', style: GameTypography.body(color: Colors.white38, fontSize: 10)),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isReady
+                          ? GameColors.profitGreen.withValues(alpha: 0.2)
+                          : (isOnExpedition
+                              ? GameColors.alertOrange.withValues(alpha: 0.2)
+                              : GameColors.hazardYellow.withValues(alpha: 0.2)),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: isReady
+                            ? GameColors.profitGreen
+                            : (isOnExpedition ? GameColors.alertOrange : GameColors.hazardYellow),
+                      ),
+                    ),
+                    child: Text(
+                      isReady ? 'HAZIR' : (isOnExpedition ? 'SEFERDE' : 'DİNLENİYOR'),
+                      style: GameTypography.display(
+                        color: isReady
+                            ? GameColors.profitGreen
+                            : (isOnExpedition ? GameColors.alertOrange : GameColors.hazardYellow),
+                        fontSize: 10,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              const Divider(color: Colors.white12),
+              const SizedBox(height: 10),
+
+              // Aksiyon 1: Ekipman Donat
+              ArcadeButton(
+                text: '🛡️ EKİPMAN DONAT / DEĞİŞTİR (${merc.equippedItems.length} Kuşandı)',
+                icon: Icons.shield,
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                  _showEquipMercenaryDialog(merc);
+                },
+                primaryColor: GameColors.gold,
+                shadowColor: const Color(0xFF8C711C),
+                textColor: Colors.black,
+                height: 40,
+                fontSize: 11,
+              ),
+              const SizedBox(height: 10),
+
+              // Aksiyon 2: Hızlı Sefer Başlatma (Eğer Hazırsa)
+              if (isReady && dungeonState.activeExpedition == null) ...[
+                Text('⚔️ HIZLI SEFERE GÖNDER:', style: GameTypography.display(color: GameColors.goldLight, fontSize: 11)),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1E202B),
+                          side: const BorderSide(color: Colors.white24),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                        ),
+                        onPressed: () {
+                          Navigator.of(ctx).pop();
+                          ref.read(dungeonProvider.notifier).startExpedition(
+                                mercenaryId: merc.id,
+                                dungeonName: 'Karanlık Madenler',
+                                dungeonDifficulty: 60,
+                                durationSeconds: 20,
+                              );
+                        },
+                        child: const Column(
+                          children: [
+                            Text('Maden (Lvl 1)', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                            Text('60 CP • 20s', style: TextStyle(color: Colors.white54, fontSize: 8)),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1E202B),
+                          side: const BorderSide(color: Colors.white24),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                        ),
+                        onPressed: () {
+                          Navigator.of(ctx).pop();
+                          ref.read(dungeonProvider.notifier).startExpedition(
+                                mercenaryId: merc.id,
+                                dungeonName: 'Gölgeli Mahzen',
+                                dungeonDifficulty: 120,
+                                durationSeconds: 35,
+                              );
+                        },
+                        child: const Column(
+                          children: [
+                            Text('Mahzen (Lvl 2)', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                            Text('120 CP • 35s', style: TextStyle(color: Colors.white54, fontSize: 8)),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1E202B),
+                          side: const BorderSide(color: Colors.white24),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                        ),
+                        onPressed: () {
+                          Navigator.of(ctx).pop();
+                          ref.read(dungeonProvider.notifier).startExpedition(
+                                mercenaryId: merc.id,
+                                dungeonName: 'Taktik Sığınak',
+                                dungeonDifficulty: 220,
+                                durationSeconds: 50,
+                              );
+                        },
+                        child: const Column(
+                          children: [
+                            Text('Sığınak (Lvl 3)', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                            Text('220 CP • 50s', style: TextStyle(color: Colors.white54, fontSize: 8)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+              ] else if (isOnExpedition) ...[
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: GameColors.alertOrange.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: GameColors.alertOrange),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.explore, color: GameColors.alertOrange, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Savaşçı şu an zindan seferinde! Döndüğünde topladığı ganimetler doğrudan ev deposuna aktarılacak.',
+                          style: GameTypography.body(color: Colors.white, fontSize: 10),
+                        ),
                       ),
                     ],
                   ),
                 ),
-              ],
-            ),
-          ),
-          // Dinlenme Odası 2-Slotlu Görsel Ranza Ortamı
-          _buildBarracksVisualRoom(dungeonState),
-
-          // Paralı Asker Listesi
-          Text('🛡️ KARARGAHTAKİ ASKERLER', style: GameTypography.display(color: Colors.white70, fontSize: 12)),
-          const SizedBox(height: 8),
-
-          if (dungeonState.mercenaries.isEmpty)
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1B1D26),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.white10),
-              ),
-              child: Center(
-                child: Column(
-                  children: [
-                    const Icon(Icons.group_off, color: Colors.white30, size: 40),
-                    const SizedBox(height: 8),
-                    Text('Henüz paralı askeriniz yok!', style: GameTypography.display(color: Colors.white, fontSize: 12)),
-                    const SizedBox(height: 4),
-                    Text('Şehir Haritasındaki HAN (Tavern) binasına giderek yeni askerler kiralayın.', textAlign: TextAlign.center, style: GameTypography.body(color: Colors.white54, fontSize: 10)),
-                    const SizedBox(height: 12),
-                    if (ref.watch(ftueProvider) == FTUEStep.tavernHiring)
-                      const GuideArrowSpotlight(
-                        text: 'Dinlenme odan henüz boş! Kara Ejder Hanı\'na git ve ilk savaşçını kirala.',
+                const SizedBox(height: 10),
+              ] else ...[
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: GameColors.hazardYellow.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: GameColors.hazardYellow),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.bedtime, color: GameColors.hazardYellow, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Savaşçı dinleniyor (${merc.restTimeRemainingSeconds} sn kaldı). Dinlenme bitince yeni sefere hazır olacak.',
+                          style: GameTypography.body(color: Colors.white, fontSize: 10),
+                        ),
                       ),
-                    const SizedBox(height: 8),
-                    ArcadeButton(
-                      text: 'KARA EJDER HANI\'NA GİT 🍺',
-                      icon: Icons.local_bar,
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const TavernScreen()),
-                        );
-                      },
-                      primaryColor: GameColors.gold,
-                      shadowColor: const Color(0xFF8C711C),
-                      textColor: Colors.black,
-                      height: 40,
-                      fontSize: 11,
-                    ),
-                  ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+              ],
+
+              // Aksiyon 3: Zindan Komuta Merkezine Git
+              TextButton.icon(
+                icon: const Icon(Icons.castle, color: GameColors.neonCyan, size: 16),
+                label: const Text('Tüm Zindan Haritasını İncele 🗺️', style: TextStyle(color: GameColors.neonCyan, fontSize: 11)),
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const DungeonHubScreen()),
+                  );
+                },
+              ),
+              const SizedBox(height: 6),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('KAPAT', style: TextStyle(color: Colors.white54, fontSize: 11)),
                 ),
               ),
-            )
-          else ...[
-            if (ref.watch(ftueProvider) == FTUEStep.restRoomEquip) ...[
-              const GuideArrowSpotlight(
-                text: 'Yeni kiraladığın askere "EKİPMAN VER" diyerek depodaki büyülü eşyayı giydir!',
-              ),
-              const SizedBox(height: 8),
             ],
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: dungeonState.mercenaries.length,
-              itemBuilder: (context, index) {
-                final merc = dungeonState.mercenaries[index];
-                return _buildMercenaryCard(merc);
-              },
-            ),
-          ],
-
-          const SizedBox(height: 18),
-
-          // Otomatik Sefer Başlatma Butonları
-          Text('🗺️ OTOMATİK ZİNDAN SEFERLERİ', style: GameTypography.display(color: GameColors.goldLight, fontSize: 12)),
-          const SizedBox(height: 8),
-
-          _buildExpeditionButton(
-            name: 'Karanlık Madenler (Seviye 1)',
-            difficulty: 60,
-            duration: 20,
-            dungeonState: dungeonState,
           ),
-          const SizedBox(height: 6),
-          _buildExpeditionButton(
-            name: 'Gölgeli Mahzen (Seviye 2)',
-            difficulty: 120,
-            duration: 35,
-            dungeonState: dungeonState,
-          ),
-          const SizedBox(height: 6),
-          _buildExpeditionButton(
-            name: 'Taktik Sığınak Harabeleri (Seviye 3)',
-            difficulty: 220,
-            duration: 50,
-            dungeonState: dungeonState,
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -918,223 +1615,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     } else {
       return GameAssetPaths.bgBarracksKnight;
     }
-  }
-
-  Widget _buildBarracksVisualRoom(DungeonState dungeonState) {
-    final mercs = dungeonState.mercenaries;
-
-    String baseImage = GameAssetPaths.bgBarracksEmpty;
-    String? rightMercImage;
-
-    if (mercs.isNotEmpty) {
-      baseImage = _getMercenaryBedAsset(mercs[0].role);
-    }
-    if (mercs.length >= 2) {
-      rightMercImage = _getMercenaryBedAsset(mercs[1].role);
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      height: 190,
-      decoration: BoxDecoration(
-        color: const Color(0xFF161822),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: GameColors.panelBorder, width: 2),
-        boxShadow: const [
-          BoxShadow(color: Colors.black54, blurRadius: 10, offset: Offset(0, 4)),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final w = constraints.maxWidth;
-            final h = constraints.maxHeight;
-
-            return Stack(
-              children: [
-                // 1. Sol Yatak & Ana Oda: Her zaman orijinal, sol tarafa asla dokunulmaz
-                Positioned.fill(
-                  child: Image.asset(
-                    baseImage,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => const Center(
-                      child: Icon(Icons.bed, color: GameColors.gold, size: 40),
-                    ),
-                  ),
-                ),
-
-                // 2. Sağ Yatak İçin 2. Asker: SADECE sağ yarının üzerine aynalanmış görüntü
-                if (rightMercImage != null)
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    bottom: 0,
-                    width: w * 0.5, // Sadece sağ yarının alanı
-                    child: ClipRect(
-                      child: OverflowBox(
-                        alignment: Alignment.centerRight,
-                        minWidth: w,
-                        maxWidth: w,
-                        minHeight: h,
-                        maxHeight: h,
-                        child: Transform.scale(
-                          scaleX: -1, // Yatay aynalama ile sol yatak sağ yatağın üzerine gelir
-                          child: Image.asset(
-                            rightMercImage,
-                            fit: BoxFit.cover,
-                            width: w,
-                            height: h,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-
-            // Üst durum çubuğu / slot rozetleri
-            Positioned(
-              top: 8,
-              left: 10,
-              right: 10,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Sol Yatak Slot 1
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.8),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(
-                        color: mercs.isNotEmpty ? GameColors.profitGreen : Colors.white24,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          mercs.isNotEmpty ? Icons.bedtime : Icons.bed,
-                          color: mercs.isNotEmpty ? GameColors.profitGreen : Colors.white38,
-                          size: 14,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          mercs.isNotEmpty
-                              ? '1: ${mercs[0].name.split(' ').first} (${mercs[0].status == MercenaryStatus.onExpedition ? "ZİNDANDA" : "DİNLENİYOR"})'
-                              : '1: BOŞ RANZA',
-                          style: GameTypography.display(
-                            color: mercs.isNotEmpty ? GameColors.profitGreen : Colors.white54,
-                            fontSize: 9,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Sağ Yatak Slot 2
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.8),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(
-                        color: mercs.length >= 2 ? GameColors.profitGreen : Colors.white24,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          mercs.length >= 2 ? Icons.bedtime : Icons.bed,
-                          color: mercs.length >= 2 ? GameColors.profitGreen : Colors.white38,
-                          size: 14,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          mercs.length >= 2
-                              ? '2: ${mercs[1].name.split(' ').first} (${mercs[1].status == MercenaryStatus.onExpedition ? "ZİNDANDA" : "DİNLENİYOR"})'
-                              : '2: BOŞ RANZA',
-                          style: GameTypography.display(
-                            color: mercs.length >= 2 ? GameColors.profitGreen : Colors.white54,
-                            fontSize: 9,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
-    ),
-  ),
-);
-}
-
-  Widget _buildMercenaryCard(MercenaryModel merc) {
-    String statusText;
-    Color statusColor;
-    if (merc.status == MercenaryStatus.ready) {
-      statusText = 'HAZIR';
-      statusColor = GameColors.profitGreen;
-    } else if (merc.status == MercenaryStatus.onExpedition) {
-      statusText = 'SEFERDE';
-      statusColor = GameColors.alertOrange;
-    } else {
-      statusText = 'DİNLENİYOR (${merc.restTimeRemainingSeconds}s)';
-      statusColor = GameColors.hazardYellow;
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E202B),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white12),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: Colors.black38, borderRadius: BorderRadius.circular(8)),
-            child: Text(merc.avatar, style: const TextStyle(fontSize: 24)),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(merc.name, style: GameTypography.display(color: Colors.white, fontSize: 12)),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: statusColor, width: 1),
-                      ),
-                      child: Text(statusText, style: GameTypography.display(color: statusColor, fontSize: 9)),
-                    ),
-                  ],
-                ),
-                Text('${merc.role} • Toplam Güç: ${merc.totalCombatPower} CP', style: GameTypography.body(color: GameColors.goldLight, fontSize: 10)),
-                Text('Kuşanılan Eşya: ${merc.equippedItems.length} Adet', style: GameTypography.body(color: Colors.white38, fontSize: 9)),
-              ],
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.shield, color: GameColors.gold, size: 20),
-            tooltip: 'Donanım Kuşan',
-            onPressed: () => _showEquipMercenaryDialog(merc),
-          ),
-        ],
-      ),
-    );
   }
 
   void _showEquipMercenaryDialog(MercenaryModel merc) {
@@ -1172,19 +1652,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                             await _loadAllInventories();
 
                             if (ref.read(ftueProvider) == FTUEStep.restRoomEquip) {
-                              ref.read(ftueProvider.notifier).setStep(FTUEStep.marketplaceFirstSale);
+                              ref.read(ftueProvider.notifier).setStep(FTUEStep.completed);
                               if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text('Tebrikler! Savaşçın güçlendi. Şimdi Çalışma Odasına geçerek ilk internet satışını yap!'),
+                                    content: Text('Tebrikler! Savaşçın büyülü ekipmanı kuşandı ve gücüne güç kattı!'),
                                     backgroundColor: GameColors.profitGreen,
-                                    duration: Duration(seconds: 3),
+                                    duration: Duration(seconds: 2),
                                   ),
                                 );
                               }
-                              Future.delayed(const Duration(milliseconds: 500), () {
+                              Future.delayed(const Duration(milliseconds: 600), () {
                                 if (mounted) {
-                                  _tabController.animateTo(0); // Çalışma Odası (Web Pazar)
+                                  _showFTUECompletedCelebrationDialog();
                                 }
                               });
                             }
@@ -1200,57 +1680,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
   }
 
-  Widget _buildExpeditionButton({
-    required String name,
-    required int difficulty,
-    required int duration,
-    required DungeonState dungeonState,
-  }) {
-    final readyMerc = dungeonState.mercenaries.where((m) => m.status == MercenaryStatus.ready).firstOrNull;
-    final isAvailable = readyMerc != null && dungeonState.activeExpedition == null;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E202B),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: isAvailable ? GameColors.gold.withValues(alpha: 0.3) : Colors.white10),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(name, style: GameTypography.display(color: Colors.white, fontSize: 11)),
-                Text('Zorluk: $difficulty CP • Süre: $duration sn', style: GameTypography.body(color: Colors.white54, fontSize: 9)),
-              ],
-            ),
-          ),
-          ArcadeButton(
-            text: 'SEFERE GÖNDER ⚔️',
-            icon: Icons.navigation,
-            onPressed: isAvailable
-                ? () {
-                    HapticFeedback.heavyImpact();
-                    ref.read(dungeonProvider.notifier).startExpedition(
-                          mercenaryId: readyMerc.id,
-                          dungeonName: name,
-                          dungeonDifficulty: difficulty,
-                          durationSeconds: duration,
-                        );
-                  }
-                : null,
-            primaryColor: isAvailable ? GameColors.gold : Colors.grey,
-            shadowColor: const Color(0xFF8C711C),
-            textColor: Colors.black,
-            height: 34,
-            fontSize: 10,
-          ),
-        ],
-      ),
-    );
-  }
 
   // ==========================================
   // 3. 🛠️ ATÖLYE & EV DEPOSU (Workshop & Storage)
@@ -1351,7 +1780,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           ? () async {
                               await _transferAllTrunkToHome();
                               if (ref.read(ftueProvider) == FTUEStep.homeInventoryTransfer) {
-                                ref.read(ftueProvider.notifier).setStep(FTUEStep.gearAndNpcIntro);
+                                ref.read(ftueProvider.notifier).setStep(FTUEStep.marketplaceFirstSale);
+                                Future.delayed(const Duration(milliseconds: 500), () {
+                                  if (mounted) {
+                                    _tabController.animateTo(0); // 💻 Çalışma Odası (Web Pazar)
+                                  }
+                                });
                               }
                             }
                           : null,

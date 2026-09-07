@@ -11,8 +11,7 @@ Bu doküman; Depo Avcıları (Storage Raiders & RPG) projesinin uçtan uca mimar
 - **Oyun Motoru:** Flame Engine 1.38+ (Depo Yağmalama Katmanı, Grid Fiziği, Top-Down Zindan).
 - **Durum Yönetimi (State Management):** Flutter Riverpod 2.6+ (Global durum, servisler, depolar).
 - **Veri Tabanı & Kalıcılık:**
-  - **Isar Database 3.1+:** İlişkisel, sorgulanabilir, yüksek performanslı yerel NoSQL veritabanı (Eşyalar, Envanter, Oyuncu Profili).
-  - **Hive 2.2+:** Hızlı key-value ayar saklama (Ses seviyesi, tema, dil tercihleri).
+  - **Evrensel HIVE NoSQL 2.2+ (Pure Dart):** Tüm platformlarda (Web, Desktop, Mobile) sıfır C++ bağımlılığıyla çalışan, RAM haritalamalı yüksek hızlı yerel veritabanı (ADR-016). Eşyalar, profiller, araçlar ve ayarlar Hive Box yapılarıyla saklanır.
 - **Varlık Üretim Hattı:** Python 3.10+, BiRefNet (`rembg`), Pillow, Midjourney / Flux.1 AI stüdyo promptları.
 
 ### 1.2. Mimari Katmanlaşma (Clean Architecture + Feature-First)
@@ -21,7 +20,7 @@ lib/
 ├── core/                  # Çekirdek Altyapı (Tüm projenin paylaştığı kodlar)
 │   ├── bridge/            # Flame <-> Flutter Dual-Channel Köprüsü
 │   ├── constants/         # Oyun sabitleri (Grid boyutları, renkler, tagler)
-│   ├── database/          # Isar DB singleton, koleksiyon şemaları
+│   ├── database/          # Hive DB singleton (DatabaseService), kutu yöneticileri
 │   ├── theme/             # Modern koyu tema, tipografi, cam tasarımı (Glassmorphism)
 │   └── utils/             # Bitboard matematik motoru, formüller
 │
@@ -43,7 +42,7 @@ lib/
 
 ### 🔹 FAZ 1 TEKNİK DETAYLARI: Çekirdek Veri Katmanı ve 64-Bit Bitboard Motoru
 
-#### A. Veri Modelleri ve Isar Şemaları
+#### A. Veri Modelleri ve Evrensel Hive Modelleri
 ```dart
 // Eşya Kondisyonu (Envanter ve Değer Çarpanı)
 enum ItemCondition {
@@ -57,21 +56,31 @@ enum ItemCondition {
   const ItemCondition(this.valueMultiplier);
 }
 
-// Isar Eşya Koleksiyonu Şeması
-@collection
+// Evrensel Pure Dart Eşya Modeli (Hive Map Serileştirmesi)
 class ItemModel {
-  Id id = Isar.autoIncrement;
-  late String name;
-  late String category; // Silah, Antika, Elektronik, Alet, Hazine
-  late int baseValue;
-  late int width;
-  late int height;
-  late List<int> bitmask; // Her satır için bit maskesi
-  late double weight;
-  late String spritePath;
-  
-  @enumerated
-  late ItemCondition condition;
+  final String id;
+  final String name;
+  final String category; // Silah, Antika, Elektronik, Alet, Hazine
+  final int baseValue;
+  final int width;
+  final int height;
+  final List<int> bitmask; // Her satır için bit maskesi
+  final double weight;
+  final String spritePath;
+  final ItemCondition condition;
+
+  const ItemModel({
+    required this.id,
+    required this.name,
+    required this.category,
+    required this.baseValue,
+    required this.width,
+    required this.height,
+    required this.bitmask,
+    required this.weight,
+    required this.spritePath,
+    required this.condition,
+  });
 }
 ```
 
@@ -214,7 +223,7 @@ Flame oyun döngüsü saniyede 60-120 kez render alırken, Flutter UI ağacını
                 ▼
           [Riverpod StateNotifier]
                 ▼
-          [Isar NoSQL Database (Kalıcı Saklama)]
+          [Hive NoSQL Database (Kalıcı Saklama)]
 ```
 
 ---

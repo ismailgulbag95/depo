@@ -28,3 +28,30 @@
 ### 5. Sonraki Adımlar
 - Taverna ekranındaki (`tavern_screen.dart`) ve Pazar Yeri (`web_marketplace_provider.dart`) FTUE geliştirmelerine devam edilecek.
 - `git push` yapıldığında otomatik senkronizasyon tetiklenecek.
+
+---
+
+## Oturum: 06 Eylül 2026 - Master Uygulama Planı & Zindan Entegrasyonu
+
+### 1. Tarih & Konu
+- **Tarih:** 06 Eylül 2026
+- **Konu:** Master Uygulama Planının (Phase 1 & Phase 2) icrası; RenderFlex overflow ve font hatalarının giderilmesi, Zindan & Seferler modülünün (DungeonHubScreen) oyun döngüsüne entegre edilmesi.
+
+### 2. Yapılan Geliştirmeler & Çözümler
+- **Storage Raid Taşması:** `storage_raid_screen.dart` dosyasında `SingleChildScrollView` içindeki `Spacer()` kaldırılıp `Flexible` ve responsive aralıklara dönüştürüldü (76px taşma giderildi).
+- **Font Glif Fallback:** `lib/core/theme/game_theme.dart` içine sistem yedek yazı tipleri (`Noto Sans`, `Roboto`, `Segoe UI`, `Arial`) eklendi.
+- **Mimari Dokümantasyon Senkronu:** `ARCHITECTURE.md` içerisindeki eski Isar veritabanı referansları temizlendi, Hive NoSQL mimarisiyle eşitlendi.
+- **Zindan Çekirdek Döngüsü (Phase 5 Entegrasyonu):**
+  - `TavernScreen`: AppBar'a ve Kapasite Paneline dinamik `DungeonHubScreen` ("Zindan Seferleri") geçiş düğmesi eklendi.
+  - `CityMapScreen`: Şehir haritasının doğu bölgesine 8. Bölge olarak "⚔️ ZİNDAN SEFERLERİ" interaktif nodu eklendi.
+  - `HomeScreen`: Dinlenme Odası sekmesindeki Seferler başlığına "Tüm Karargah ⚔️" geçişi eklendi.
+
+### 3. Değiştirilen Dosyalar
+- `lib/features/storage_raid/presentation/storage_raid_screen.dart`
+- `lib/core/theme/game_theme.dart`
+- `ARCHITECTURE.md`
+- `lib/features/tavern/presentation/tavern_screen.dart`
+- `lib/features/city_map/presentation/city_map_screen.dart`
+- `lib/features/home/presentation/home_screen.dart`
+- `.agents/memory/sessions.md`
+

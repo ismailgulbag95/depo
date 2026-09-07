@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:yeni_oyun_sablon/core/database/models/item_model.dart';
 import 'package:yeni_oyun_sablon/features/marketplace/models/web_listing_model.dart';
+import 'package:yeni_oyun_sablon/features/onboarding/providers/ftue_provider.dart';
 import 'package:yeni_oyun_sablon/features/player_profile/providers/player_profile_provider.dart';
 
 /// İnternet Satış Masası Durumu
@@ -67,6 +68,21 @@ class WebMarketplaceNotifier extends StateNotifier<WebMarketplaceState> {
       }
 
       final newTicks = listing.ticksAlive + 1;
+
+      // 🎯 FTUE Rehberinde Hızlı Satış Garantisi (İlk satışta oyuncu bekletilmez)
+      final isFTUEMarket = ref.read(ftueProvider) == FTUEStep.marketplaceFirstSale;
+      if (isFTUEMarket) {
+        final buyer = _buyerQuotes[_rnd.nextInt(_buyerQuotes.length)];
+        updated.add(listing.copyWith(
+          isSold: true,
+          offerCustomerName: buyer['name'],
+          offerMessage: 'Harika bir parça, tam aradığım şeydi! İlanı hemen satın aldım.',
+          ticksAlive: newTicks,
+        ));
+        changed = true;
+        continue;
+      }
+
       final roll = _rnd.nextDouble();
 
       // Talep seviyesine göre teklif veya anında alıcı simülasyonu
@@ -181,6 +197,13 @@ class WebMarketplaceNotifier extends StateNotifier<WebMarketplaceState> {
 
     final updated = List<WebListingModel>.from(state.listings)..add(listing);
     state = state.copyWith(listings: updated);
+
+    final isFTUEMarket = ref.read(ftueProvider) == FTUEStep.marketplaceFirstSale;
+    if (isFTUEMarket && !isInstant) {
+      Timer(const Duration(milliseconds: 1200), () {
+        _tickSimulation();
+      });
+    }
   }
 
   /// Pazarlık teklifini kabul et ve anında sat
