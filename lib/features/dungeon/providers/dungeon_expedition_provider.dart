@@ -294,6 +294,18 @@ class DungeonExpeditionNotifier extends StateNotifier<DungeonState> {
     );
   }
 
+  /// Savaşçıyı belirli bir süre dinlenmeye al (Aktif zindan savaşı sonrası)
+  void setMercenaryResting(int mercenaryId, int cooldownSeconds) {
+    final mercIndex = state.mercenaries.indexWhere((m) => m.id == mercenaryId);
+    if (mercIndex == -1) return;
+    final updated = List<MercenaryModel>.from(state.mercenaries);
+    updated[mercIndex] = updated[mercIndex].copyWith(
+      status: MercenaryStatus.resting,
+      restTimeRemainingSeconds: cooldownSeconds,
+    );
+    state = state.copyWith(mercenaries: updated);
+  }
+
   @override
   void dispose() {
     _tickerTimer?.cancel();

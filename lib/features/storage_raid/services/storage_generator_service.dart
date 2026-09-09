@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:yeni_oyun_sablon/core/constants/game_constants.dart';
 import 'package:yeni_oyun_sablon/core/database/database_service.dart';
 import 'package:yeni_oyun_sablon/core/database/models/item_model.dart';
 
@@ -25,6 +26,7 @@ class GeneratedStorageUnit {
   final String unitNumber;
   final int startingBid;
   final int totalEstimatedValue;
+  final bool isTrapOrRisky; // %25 oranında aldatıcı/hasarlı depo riski
   final List<ItemModel> layer3Items; // Arka Zemin (Küçük / Değerli)
   final List<ItemModel> layer2Items; // Orta Zemin (Kutular / Elektronik)
   final List<ItemModel> layer1Items; // Ön Zemin (Büyük Hacimli Mobilya / Makineler)
@@ -34,6 +36,7 @@ class GeneratedStorageUnit {
     required this.unitNumber,
     required this.startingBid,
     required this.totalEstimatedValue,
+    this.isTrapOrRisky = false,
     required this.layer3Items,
     required this.layer2Items,
     required this.layer1Items,
@@ -138,16 +141,75 @@ class StorageGeneratorService {
       }
     }
 
-    final totalItems = [...layer3, ...layer2, ...layer1];
-    final totalEstValue = totalItems.map((e) => e.baseValue).fold(0, (a, b) => a + b);
+    // Riskli/Aldatıcı depo kontrolü (İlk müzayedede risk olmaz, sonrakilerde %25 şans)
+    final bool isTrapOrRisky = !isFirstAuction && (_rnd.nextDouble() < 0.25);
 
-    // Başlangıç teklifi toplam tahmini değerin %25 - %35'i civarında başlar
+    // Eşyaların kondisyon ve kirliliklerini riske göre belirle
+    ItemModel applyRiskAndCondition(ItemModel baseItem) {
+      ItemCondition cond;
+      double dirt;
+      if (isTrapOrRisky) {
+        // Aldatıcı depo: Çoğu hurda veya kötü
+        final roll = _rnd.nextDouble();
+        if (roll < 0.45) {
+          cond = ItemCondition.scrap;
+        } else if (roll < 0.80) {
+          cond = ItemCondition.poor;
+        } else {
+          cond = ItemCondition.good;
+        }
+        dirt = 40.0 + _rnd.nextDouble() * 55.0; // %40 - %95 arası kirli
+      } else {
+        // Normal depo: Dengeli dağılım
+        final roll = _rnd.nextDouble();
+        if (roll < 0.15) {
+          cond = ItemCondition.poor;
+        } else if (roll < 0.75) {
+          cond = ItemCondition.good;
+        } else if (roll < 0.95) {
+          cond = ItemCondition.pristine;
+        } else {
+          cond = ItemCondition.mystic;
+        }
+        dirt = _rnd.nextDouble() * 40.0; // %0 - %40 arası kirli
+      }
+
+      return ItemModel(
+        id: baseItem.id,
+        code: baseItem.code,
+        nameTr: baseItem.nameTr,
+        nameEn: baseItem.nameEn,
+        nameRu: baseItem.nameRu,
+        nameEs: baseItem.nameEs,
+        category: baseItem.category,
+        baseValue: baseItem.baseValue,
+        width: baseItem.width,
+        height: baseItem.height,
+        bitmask: baseItem.bitmask,
+        weight: baseItem.weight,
+        spritePath: baseItem.spritePath,
+        condition: cond,
+        dirtPercentage: dirt,
+      );
+    }
+
+    final finalLayer1 = layer1.map(applyRiskAndCondition).toList();
+    final finalLayer2 = layer2.map(applyRiskAndCondition).toList();
+    final finalLayer3 = layer3.map(applyRiskAndCondition).toList();
+
+    final totalItems = [...finalLayer3, ...finalLayer2, ...finalLayer1];
+    final totalEstValue = totalItems.map((e) => e.currentValue).fold(0, (a, b) => a + b);
+
+    // Başlangıç teklifi: Normal depolarda tahmini değerin %30 - %40'ı,
+    // Riskli depolarda ise oyuncuyu yanıltmak için taban değerin %35'i civarı başlar
     int startBid;
     if (isFirstAuction) {
       startBid = 200 + _rnd.nextInt(3) * 50; // 200, 250, 300 ₺
     } else {
-      final calculated = (totalEstValue * (0.25 + _rnd.nextDouble() * 0.10));
-      startBid = ((calculated / 25).round() * 25).clamp(150, 1500);
+      final baseEst = totalItems.map((e) => e.baseValue).fold(0, (a, b) => a + b);
+      final refValue = isTrapOrRisky ? baseEst : totalEstValue;
+      final calculated = (refValue * (0.30 + _rnd.nextDouble() * 0.10));
+      startBid = ((calculated / 25).round() * 25).clamp(150, 2000);
     }
 
     return GeneratedStorageUnit(
@@ -155,9 +217,10 @@ class StorageGeneratorService {
       unitNumber: unitNum,
       startingBid: startBid,
       totalEstimatedValue: totalEstValue,
-      layer3Items: layer3,
-      layer2Items: layer2,
-      layer1Items: layer1,
+      isTrapOrRisky: isTrapOrRisky,
+      layer3Items: finalLayer3,
+      layer2Items: finalLayer2,
+      layer1Items: finalLayer1,
     );
   }
 }

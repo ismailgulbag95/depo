@@ -12,6 +12,7 @@ import 'package:yeni_oyun_sablon/features/onboarding/providers/ftue_provider.dar
 import 'package:yeni_oyun_sablon/features/storage_raid/presentation/storage_raid_screen.dart';
 import 'package:yeni_oyun_sablon/features/story_intro/presentation/story_intro_screen.dart';
 import 'package:flame/flame.dart';
+import 'package:yeni_oyun_sablon/core/widgets/game_viewport_wrapper.dart';
 import 'package:yeni_oyun_sablon/core/localization/localization_service.dart';
 
 void main() async {
@@ -68,6 +69,7 @@ class OyunSablonApp extends ConsumerWidget {
       title: 'Depo Avcıları',
       debugShowCheckedModeBanner: false,
       theme: GameTheme.themeData,
+      builder: (context, child) => GameViewportWrapper(child: child ?? const SizedBox()),
       home: homeWidget,
     );
   }

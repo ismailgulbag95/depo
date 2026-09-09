@@ -66,6 +66,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/audio/
     - assets/data/
     - assets/lang/
     - assets/characters/
@@ -77,24 +78,31 @@ flutter:
     - assets/items/agir_sanayi/
     - assets/items/ahsap_mobilya/
     - assets/items/araba_parcalari/
+    - assets/items/arkeoloji_ve_antik_kalintilar/
     - assets/items/beyaz_esya/
     - assets/items/buyulu_silahlar/
     - assets/items/buyulu_takilar/
     - assets/items/buyulu_zirhlar/
     - assets/items/cesitli_mobilyalar/
+    - assets/items/denizcilik_ve_balikcilik/
     - assets/items/elektronik_aletler/
     - assets/items/gercekci_silahlar/
+    - assets/items/kilit_ve_hirsizlik/
     - assets/items/laboratuvar_simya/
     - assets/items/maden_ve_taslar/
     - assets/items/manuel_el_aletleri/
+    - assets/items/melez_arcane_tech/
+    - assets/items/mutfak_gastronomi/
     - assets/items/muzik_aletleri/
     - assets/items/ofis_ekipmanlari/
     - assets/items/sanat_antikalar/
     - assets/items/taktik_hayatta_kalma/
+    - assets/items/tarim_ve_bahce_ekipmanlari/
     - assets/items/tezgah_donanimlari/
     - assets/items/tier1_bronz_zirh/
     - assets/items/tier2_celik_zirh/
     - assets/items/tier3_titanyum_zirh/
+    - assets/items/tip_ve_saglik/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

@@ -1299,7 +1299,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 icon: Icons.map,
                 onPressed: () {
                   Navigator.of(ctx).pop();
-                  Navigator.of(context).pop(); // Şehir Haritasına dön
+                  Navigator.of(context).popUntil((route) => route.isFirst);
                 },
                 primaryColor: GameColors.profitGreen,
                 shadowColor: const Color(0xFF00893E),
@@ -2214,7 +2214,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 child: ArcadeButton(
                   text: 'TEMİZLEME 🧽',
                   icon: Icons.cleaning_services,
-                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CraftingBenchScreen(initialTab: 0))),
+                  onPressed: () async {
+                    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CraftingBenchScreen(initialTab: 0)));
+                    _loadAllInventories();
+                  },
                   primaryColor: GameColors.neonCyan,
                   shadowColor: const Color(0xFF00838F),
                   textColor: Colors.black,
@@ -2227,7 +2230,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 child: ArcadeButton(
                   text: 'RESTORASYON 🛠️',
                   icon: Icons.build,
-                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CraftingBenchScreen(initialTab: 1))),
+                  onPressed: () async {
+                    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CraftingBenchScreen(initialTab: 1)));
+                    _loadAllInventories();
+                  },
                   primaryColor: GameColors.gold,
                   shadowColor: const Color(0xFF8C711C),
                   textColor: Colors.black,
@@ -2240,7 +2246,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 child: ArcadeButton(
                   text: 'EKSPERTİZ 🔍',
                   icon: Icons.search,
-                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CraftingBenchScreen(initialTab: 2))),
+                  onPressed: () async {
+                    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CraftingBenchScreen(initialTab: 2)));
+                    _loadAllInventories();
+                  },
                   primaryColor: GameColors.profitGreen,
                   shadowColor: const Color(0xFF006622),
                   textColor: Colors.black,

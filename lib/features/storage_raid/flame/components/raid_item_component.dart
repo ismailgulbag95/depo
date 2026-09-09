@@ -4,10 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:yeni_oyun_sablon/core/database/models/item_model.dart';
 
 /// Depo Sahnesindeki 2D Katmanlı Eşya Bileşeni
-class RaidItemComponent extends SpriteComponent with TapCallbacks {
+class RaidItemComponent extends PositionComponent with TapCallbacks {
   final ItemModel itemModel;
   final int layer; // 1: Ön Plan, 2: Orta Plan, 3: Arka Plan
   final void Function(RaidItemComponent item) onSelected;
+  Sprite? sprite;
 
   // Kademeli gölge opaklığı: 0.0: Tam net, 0.75: Koyu siluet, 1.0: Tam karanlık
   double shadowOpacity;
@@ -22,7 +23,7 @@ class RaidItemComponent extends SpriteComponent with TapCallbacks {
     required this.onSelected,
     required super.position,
     required super.size,
-    super.sprite,
+    this.sprite,
     this.shadowOpacity = 0.0,
   }) : super(anchor: Anchor.bottomCenter) {
     // Katman sırasına göre render önceliği (Priority)
@@ -42,8 +43,24 @@ class RaidItemComponent extends SpriteComponent with TapCallbacks {
         RRect.fromRectAndRadius(size.toRect(), const Radius.circular(8)),
         placeholderPaint,
       );
+      // İkon/Soru işareti veya kısa isim
+      final tp = TextPainter(
+        text: TextSpan(
+          text: itemModel.nameTr.isNotEmpty ? itemModel.nameTr[0] : '?',
+          style: const TextStyle(
+            color: Colors.white54,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      tp.paint(
+        canvas,
+        Offset((size.x - tp.width) / 2, (size.y - tp.height) / 2),
+      );
     } else {
-      super.render(canvas);
+      sprite!.render(canvas, size: size);
     }
 
     // 2. Kademeli gölge maskesi çiz (%0, %75 veya %100)

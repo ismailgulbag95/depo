@@ -1,39 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Depo Avcıları — Endüstriyel & Yüksek Bahisli Arcade Tasarım Sistemi (Game Design System)
+/// Depo Avcıları — Modern Minimalist / Elit Pazar Yeri Tasarım Sistemi (ADR-031)
 class GameColors {
-  // Zemin ve Panel Katmanları
-  static const Color background = Color(0xFF0D0E11);
-  static const Color surface = Color(0xFF15161C);
-  static const Color panelDark = Color(0xFF1B1D24);
-  static const Color panelBorder = Color(0xFF2E313D);
-  static const Color panelBevelHighlight = Color(0x24FFFFFF);
-  static const Color panelBevelShadow = Color(0xB3000000);
+  // Modern Minimalist Zemin ve Panel Katmanları (Clean Dark Mode)
+  static const Color background = Color(0xFF0F1117);
+  static const Color surface = Color(0xFF161922);
+  static const Color panelDark = Color(0xFF1E222D);
+  static const Color panelBorder = Color(0xFF2A2E39);
+  static const Color panelBorderSubtle = Color(0xFF212631);
+  static const Color panelBevelHighlight = Color(0x18FFFFFF);
+  static const Color panelBevelShadow = Color(0x66000000);
 
-  // Endüstriyel & Vurgu Renkleri
+  // Elit Pazar Yeri & Vurgu Renkleri
   static const Color gold = Color(0xFFD4AF37);
   static const Color goldLight = Color(0xFFFFD54F);
-  static const Color hazardYellow = Color(0xFFFFC107);
-  static const Color hazardBlack = Color(0xFF121214);
+  static const Color hazardYellow = Color(0xFFF59E0B);
+  static const Color hazardBlack = Color(0xFF111827);
 
-  // Durum ve Aksiyon Renkleri
-  static const Color profitGreen = Color(0xFF00E676);
-  static const Color lossRed = Color(0xFFFF3D00);
-  static const Color neonCyan = Color(0xFF00E5FF);
-  static const Color alertOrange = Color(0xFFFF6D00);
+  // Modern Durum ve Aksiyon Renkleri (Fintech / Pazar Yeri)
+  static const Color profitGreen = Color(0xFF10B981);
+  static const Color emeraldGreen = Color(0xFF10B981);
+  static const Color lossRed = Color(0xFFEF4444);
+  static const Color crimsonRed = Color(0xFFEF4444);
+  static const Color neonCyan = Color(0xFF06B6D4);
+  static const Color alertOrange = Color(0xFFF97316);
+  static const Color titaniumWhite = Color(0xFFF8FAFC);
+  static const Color mutedText = Color(0xFF94A3B8);
 
   // Nadirlik Renkleri
-  static const Color rarityCommon = Color(0xFF9E9E9E);
-  static const Color rarityRare = Color(0xFF2979FF);
-  static const Color rarityEpic = Color(0xFFAA00FF);
-  static const Color rarityLegendary = Color(0xFFFFD700);
+  static const Color rarityCommon = Color(0xFF94A3B8);
+  static const Color rarityRare = Color(0xFF3B82F6);
+  static const Color rarityEpic = Color(0xFFA855F7);
+  static const Color rarityLegendary = Color(0xFFF59E0B);
 }
 
-/// Endüstriyel Tipografi Sistemi (Anti-AI Font Hierarchy)
+/// Modern Minimalist Tipografi Sistemi
 class GameTypography {
   /// Evrensel font glifleri ve çoklu dil (TR, RU, ES) desteği için fallback listesi
   static const List<String> fontFallback = [
+    'Noto Color Emoji',
+    'Apple Color Emoji',
+    'Segoe UI Emoji',
+    'Inter',
     'Noto Sans',
     'Roboto',
     'Segoe UI',

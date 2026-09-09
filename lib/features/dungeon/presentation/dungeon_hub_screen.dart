@@ -10,6 +10,7 @@ import 'package:yeni_oyun_sablon/core/widgets/game_screen_shake.dart';
 import 'package:yeni_oyun_sablon/core/widgets/hazard_stripe_banner.dart';
 import 'package:yeni_oyun_sablon/core/widgets/retro_led_display.dart';
 import 'package:yeni_oyun_sablon/features/dungeon/models/mercenary_model.dart';
+import 'package:yeni_oyun_sablon/features/dungeon/presentation/active_dungeon_battle_screen.dart';
 import 'package:yeni_oyun_sablon/features/dungeon/providers/dungeon_expedition_provider.dart';
 import 'package:yeni_oyun_sablon/features/player_profile/providers/player_profile_provider.dart';
 
@@ -205,6 +206,71 @@ class _DungeonHubScreenState extends ConsumerState<DungeonHubScreen>
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       children: [
         if (state.lastResult != null) _buildResultReportCard(state.lastResult!),
+        
+        // 🔥 YENİ: Aktif Rogue-lite Zindan Savaşı Kartı
+        Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          child: DiegeticMetalPanel(
+            padding: const EdgeInsets.all(14),
+            borderColor: GameColors.crimsonRed,
+            glowColor: GameColors.crimsonRed,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: GameColors.crimsonRed.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: GameColors.crimsonRed),
+                      ),
+                      child: const Icon(Icons.flash_on, color: GameColors.crimsonRed, size: 28),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'AKTİF ROGUE-LITE ZİNDAN SAVAŞI',
+                            style: GameTypography.display(color: GameColors.goldLight, fontSize: 13),
+                          ),
+                          Text(
+                            'Kat kat ilerle, canavarları biç, zırh/silah düşür! Ölürsen ganimeti kaybedersin!',
+                            style: GameTypography.body(color: Colors.white70, fontSize: 11),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ArcadeButton(
+                  text: readyMercs.isNotEmpty ? 'ZİNDANA İN (KAT KAT SAVAŞ) ⚔️' : 'SAVAŞÇILAR DİNLENİYOR ⏳',
+                  color: GameColors.crimsonRed,
+                  onPressed: readyMercs.isNotEmpty
+                      ? () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => ActiveDungeonBattleScreen(mercenary: readyMercs.first),
+                            ),
+                          );
+                        }
+                      : null,
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        Text(
+          'OTOMATİK PASİF SEFERLER',
+          style: GameTypography.display(color: Colors.white60, fontSize: 11),
+        ),
+        const SizedBox(height: 6),
+
         ...dungeons.map((d) {
           final canStart = readyMercs.isNotEmpty;
           return Container(

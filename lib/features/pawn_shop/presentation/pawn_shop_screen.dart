@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:yeni_oyun_sablon/core/database/database_service.dart';
 import 'package:yeni_oyun_sablon/core/database/models/item_model.dart';
+import 'package:yeni_oyun_sablon/core/services/game_audio_service.dart';
 import 'package:yeni_oyun_sablon/core/theme/game_theme.dart';
 import 'package:yeni_oyun_sablon/core/widgets/arcade_button.dart';
 import 'package:yeni_oyun_sablon/core/widgets/diegetic_metal_panel.dart';
@@ -77,9 +78,13 @@ class _PawnShopScreenState extends ConsumerState<PawnShopScreen> {
       if (item != null) showcase.add(item);
     }
 
-    // Dükkan deposu
+    // Dükkan & Ev Deposu eşyaları (Oyuncunun tüm depolardaki eşyalarını vitrine koyabilmesi için)
     final storage = <ItemModel>[];
-    for (final id in profile.shopStorageItemIds) {
+    final allStorageIds = <int>[
+      ...profile.shopStorageItemIds,
+      ...profile.homeStorageItemIds.where((id) => !profile.shopStorageItemIds.contains(id)),
+    ];
+    for (final id in allStorageIds) {
       final item = await DatabaseService.instance.getItemById(id);
       if (item != null) storage.add(item);
     }
@@ -145,6 +150,7 @@ class _PawnShopScreenState extends ConsumerState<PawnShopScreen> {
     final offer = _activeCustomerOffer!;
 
     HapticFeedback.heavyImpact();
+    GameAudioService.instance.playCoin();
 
     // 1. Nakit ve itibar ekle
     await ref.read(playerProfileProvider.notifier).addCash(offer.offeredPrice);
@@ -152,6 +158,27 @@ class _PawnShopScreenState extends ConsumerState<PawnShopScreen> {
 
     // 2. Vitrinden kaldır
     await ref.read(playerProfileProvider.notifier).removeFromShowcase(offer.item.id);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle, color: GameColors.profitGreen, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '🎉 ANLAŞMA SAĞLANDI! +${offer.offeredPrice} ₺ KAZANILDI (+25 XP)',
+                  style: GameTypography.body(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: const Color(0xFF132218),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
 
     setState(() {
       _activeCustomerOffer = null;
@@ -171,6 +198,7 @@ class _PawnShopScreenState extends ConsumerState<PawnShopScreen> {
     if (isSuccess) {
       final newOfferPrice = (offer.offeredPrice * 1.15).round();
       HapticFeedback.mediumImpact();
+      GameAudioService.instance.playClick();
       setState(() {
         _activeCustomerOffer = ShopCustomerOffer(
           item: offer.item,
@@ -184,6 +212,7 @@ class _PawnShopScreenState extends ConsumerState<PawnShopScreen> {
       });
     } else {
       HapticFeedback.heavyImpact();
+      GameAudioService.instance.playWarning();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('${offer.customerName}: "Bu fiyat çok fazla, anlaşamıyoruz!" diyerek dükkandan ayrıldı.'),
@@ -198,6 +227,7 @@ class _PawnShopScreenState extends ConsumerState<PawnShopScreen> {
 
   /// Teklifi Reddet
   void _handleRejectOffer() {
+    GameAudioService.instance.playClick();
     setState(() {
       _activeCustomerOffer = null;
     });
@@ -243,6 +273,7 @@ class _PawnShopScreenState extends ConsumerState<PawnShopScreen> {
 
     HapticFeedback.mediumImpact();
     await ref.read(playerProfileProvider.notifier).removeItemFromShopStorage(item.id);
+    await ref.read(playerProfileProvider.notifier).removeFromHomeStorage(item.id);
     await ref.read(playerProfileProvider.notifier).addToShowcase(item.id);
     await _loadInventories();
   }
@@ -251,7 +282,7 @@ class _PawnShopScreenState extends ConsumerState<PawnShopScreen> {
   Future<void> _removeFromShowcase(ItemModel item) async {
     HapticFeedback.mediumImpact();
     await ref.read(playerProfileProvider.notifier).removeFromShowcase(item.id);
-    await ref.read(playerProfileProvider.notifier).addItemToShopStorage(item.id);
+    await ref.read(playerProfileProvider.notifier).addToHomeStorage(item.id);
     await _loadInventories();
   }
 

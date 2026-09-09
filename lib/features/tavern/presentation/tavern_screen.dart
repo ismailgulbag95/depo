@@ -103,8 +103,9 @@ class _TavernScreenState extends ConsumerState<TavernScreen> {
       ref.read(ftueProvider.notifier).setStep(FTUEStep.restRoomEquip);
       Future.delayed(const Duration(milliseconds: 600), () {
         if (mounted) {
-          Navigator.of(context).pushReplacement(
+          Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (_) => const HomeScreen(initialTabIndex: 1)),
+            (route) => route.isFirst,
           );
         }
       });

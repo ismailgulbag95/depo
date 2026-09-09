@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:yeni_oyun_sablon/core/constants/asset_paths.dart';
+import 'package:yeni_oyun_sablon/core/constants/game_constants.dart';
+import 'package:yeni_oyun_sablon/core/services/game_audio_service.dart';
 import 'package:yeni_oyun_sablon/core/theme/game_theme.dart';
 import 'package:yeni_oyun_sablon/core/widgets/arcade_button.dart';
 import 'package:yeni_oyun_sablon/core/widgets/auction_stamp.dart';
@@ -12,9 +14,11 @@ import 'package:yeni_oyun_sablon/core/widgets/diegetic_metal_panel.dart';
 import 'package:yeni_oyun_sablon/core/widgets/game_screen_shake.dart';
 import 'package:yeni_oyun_sablon/core/widgets/hazard_stripe_banner.dart';
 import 'package:yeni_oyun_sablon/core/widgets/retro_led_display.dart';
+import 'package:flame/game.dart';
 import 'package:yeni_oyun_sablon/features/city_map/presentation/city_map_screen.dart';
 import 'package:yeni_oyun_sablon/features/onboarding/providers/ftue_provider.dart';
 import 'package:yeni_oyun_sablon/features/player_profile/providers/player_profile_provider.dart';
+import 'package:yeni_oyun_sablon/features/storage_raid/flame/storage_raid_game.dart';
 import 'package:yeni_oyun_sablon/features/storage_raid/presentation/storage_raid_screen.dart';
 import 'package:yeni_oyun_sablon/features/storage_raid/services/storage_generator_service.dart';
 
@@ -63,6 +67,7 @@ class _LiveAuctionScreenState extends ConsumerState<LiveAuctionScreen>
     with SingleTickerProviderStateMixin {
   AuctionPhase _phase = AuctionPhase.inspection;
   GeneratedStorageUnit? _currentUnit;
+  StorageRaidGame? _previewStorageGame;
 
   // Zamanlayıcılar
   int _inspectionSeconds = 15;
@@ -169,10 +174,13 @@ class _LiveAuctionScreenState extends ConsumerState<LiveAuctionScreen>
     if (mounted) {
       setState(() {
         _currentUnit = unit;
+        _previewStorageGame = StorageRaidGame(
+          storageUnit: unit,
+          isReadOnly: true,
+        );
         _currentBid = _isScripted ? 150 : unit.startingBid;
         _highestBidderName = 'Açılış';
         _isPlayerHighest = false;
-        _scriptedStep = 0;
         _initBiddersForUnit(unit);
       });
 
@@ -239,6 +247,7 @@ class _LiveAuctionScreenState extends ConsumerState<LiveAuctionScreen>
         if (_biddingSeconds <= 5) {
           _shakeController.shake(intensity: 3.0);
           HapticFeedback.selectionClick();
+          GameAudioService.instance.playWarning();
         }
       } else {
         _finishAuction();
@@ -322,7 +331,6 @@ class _LiveAuctionScreenState extends ConsumerState<LiveAuctionScreen>
             _highestBidderName = '${_bidders[2].avatar} ${_bidders[2].name}';
             _isPlayerHighest = false;
             _currentChant = 'Gus: "300 ₺! Benim için çerez parası!"';
-            _scriptedStep = 1; // Sıradaki oyuncu teklifi: 350
           });
           _shakeController.shake(intensity: 4.0);
           HapticFeedback.lightImpact();
@@ -345,7 +353,6 @@ class _LiveAuctionScreenState extends ConsumerState<LiveAuctionScreen>
             _isPlayerHighest = false;
             _bidders[2].isDroppedOut = true; // Gus pas
             _currentChant = 'Dave: "400 ₺! Son şansın evlat!" Gus: "Ben de pas!"';
-            _scriptedStep = 2; // Sıradaki oyuncu teklifi: 450
           });
           _shakeController.shake(intensity: 5.0);
           HapticFeedback.lightImpact();
@@ -406,6 +413,7 @@ class _LiveAuctionScreenState extends ConsumerState<LiveAuctionScreen>
 
     _shakeController.shake(intensity: 7.0);
     HapticFeedback.heavyImpact();
+    GameAudioService.instance.playClick();
 
     if (_isScripted) {
       _handleScriptedBotResponses(newBid);
@@ -429,16 +437,26 @@ class _LiveAuctionScreenState extends ConsumerState<LiveAuctionScreen>
     setState(() {
       _phase = AuctionPhase.finished;
       _playerWon = _isPlayerHighest;
+      final extraFees = _isScripted
+          ? 0
+          : (GameConstants.auctionEntryFee + GameConstants.baseTransportCost);
       _currentChant = _playerWon
-          ? 'SATTIM! BİR, İKİ, ÜÇ! DEPO SİZİN OLDU! 🏆'
+          ? (_isScripted
+              ? 'SATTIM! İLK DEPO SİZİN! (Başlangıç Teşviki: Harç & Nakliye ÜCRETSİZ! Teklif: $_currentBid ₺) 🏆'
+              : 'SATTIM! DEPO SİZİN! (Teklif: $_currentBid ₺ + Harç & Nakliye: $extraFees ₺) 🏆')
           : 'SATTIM! Depo $_highestBidderName\'e satıldı!';
     });
 
     _shakeController.shake(intensity: 10.0, duration: const Duration(milliseconds: 500));
     HapticFeedback.heavyImpact();
+    GameAudioService.instance.playGavel();
 
     if (_playerWon) {
-      ref.read(playerProfileProvider.notifier).deductCash(_currentBid);
+      GameAudioService.instance.playVictory();
+      final int totalExpenses = _isScripted
+          ? _currentBid
+          : (_currentBid + GameConstants.auctionEntryFee + GameConstants.baseTransportCost).round();
+      ref.read(playerProfileProvider.notifier).deductCash(totalExpenses);
       if (_isScripted) {
         ref.read(ftueProvider.notifier).setStep(FTUEStep.tetrisTutorial);
       }
@@ -602,122 +620,10 @@ class _LiveAuctionScreenState extends ConsumerState<LiveAuctionScreen>
                           borderRadius: BorderRadius.circular(12),
                           child: Stack(
                             children: [
-                              // Depo İçi: Gerçekçi Duvar, Beton Zemin ve Doğrudan Yerde Duran Eşyalar
-                              if (_currentUnit != null)
+                              // Depo İçi: Gerçekçi Duvar, Beton Zemin ve Birebir Aynı Flame Depo Sahnesi
+                              if (_currentUnit != null && _previewStorageGame != null)
                                 Positioned.fill(
-                                  child: Stack(
-                                    children: [
-                                      // 1. Arka Plan Duvar & Tavan & Zemin 3D Perspektif Çizimi
-                                      CustomPaint(
-                                        size: Size.infinite,
-                                        painter: _StoragePreviewEnvironmentPainter(),
-                                      ),
-
-                                      // 2. EŞYALAR — GERÇEKÇİ BOYUT, DERİNLİK VE TAM ZEMİNE BASAN DÜZEN
-                                      Positioned(
-                                        bottom: 8,
-                                        left: 8,
-                                        right: 8,
-                                        child: Stack(
-                                          alignment: Alignment.bottomCenter,
-                                          children: [
-                                            // KATMAN 3: En Arka Zemin Sırası
-                                            Row(
-                                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                              crossAxisAlignment: CrossAxisAlignment.end,
-                                              children: _currentUnit!.layer3Items.map((item) {
-                                                return Opacity(
-                                                  opacity: 0.75,
-                                                  child: Container(
-                                                    margin: const EdgeInsets.only(bottom: 6),
-                                                    child: Image.asset(
-                                                      item.spritePath,
-                                                      width: 36,
-                                                      height: 36,
-                                                      fit: BoxFit.contain,
-                                                      errorBuilder: (context, error, stackTrace) => Container(
-                                                        width: 32,
-                                                        height: 32,
-                                                        decoration: BoxDecoration(
-                                                          color: Colors.amber.withValues(alpha: 0.2),
-                                                          borderRadius: BorderRadius.circular(6),
-                                                          border: Border.all(color: Colors.amber, width: 1),
-                                                        ),
-                                                        child: const Icon(Icons.diamond, color: Colors.amber, size: 18),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                );
-                                              }).toList(),
-                                            ),
-
-                                            // KATMAN 2: Orta Zemin Sırası
-                                            Row(
-                                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                              crossAxisAlignment: CrossAxisAlignment.end,
-                                              children: _currentUnit!.layer2Items.map((item) {
-                                                final itemW = item.width >= 3 ? 75.0 : (item.width >= 2 ? 60.0 : 48.0);
-                                                final itemH = item.height >= 3 ? 70.0 : (item.height >= 2 ? 55.0 : 44.0);
-
-                                                return Opacity(
-                                                  opacity: 0.90,
-                                                  child: Container(
-                                                    margin: const EdgeInsets.only(bottom: 3),
-                                                    child: Image.asset(
-                                                      item.spritePath,
-                                                      width: itemW,
-                                                      height: itemH,
-                                                      fit: BoxFit.contain,
-                                                      errorBuilder: (context, error, stackTrace) => Container(
-                                                        width: itemW,
-                                                        height: itemH,
-                                                        decoration: BoxDecoration(
-                                                          color: Colors.white10,
-                                                          borderRadius: BorderRadius.circular(6),
-                                                          border: Border.all(color: Colors.white24),
-                                                        ),
-                                                        child: const Icon(Icons.inventory_2, color: Colors.white38, size: 24),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                );
-                                              }).toList(),
-                                            ),
-
-                                            // KATMAN 1: En Ön Zemin Sırası (Büyük Mobilya / Kasa / Sandık)
-                                            Row(
-                                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                              crossAxisAlignment: CrossAxisAlignment.end,
-                                              children: _currentUnit!.layer1Items.map((item) {
-                                                final itemW = item.width >= 4 ? 120.0 : (item.width >= 3 ? 95.0 : 75.0);
-                                                final itemH = item.height >= 3 ? 95.0 : (item.height >= 2 ? 80.0 : 60.0);
-
-                                                return Container(
-                                                  margin: const EdgeInsets.symmetric(horizontal: 2),
-                                                  child: Image.asset(
-                                                    item.spritePath,
-                                                    width: itemW,
-                                                    height: itemH,
-                                                    fit: BoxFit.contain,
-                                                    errorBuilder: (context, error, stackTrace) => Container(
-                                                      width: itemW,
-                                                      height: itemH,
-                                                      decoration: BoxDecoration(
-                                                        color: const Color(0xFF221F1B),
-                                                        borderRadius: BorderRadius.circular(8),
-                                                        border: Border.all(color: const Color(0xFF5A4D3B), width: 1.5),
-                                                      ),
-                                                      child: const Icon(Icons.archive, color: Colors.amber, size: 30),
-                                                    ),
-                                                  ),
-                                                );
-                                              }).toList(),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                  child: GameWidget(game: _previewStorageGame!),
                                 ),
 
                               // 3. Animasyonlu Metal Kepenk (Roller Shutter)
@@ -1044,141 +950,7 @@ class _LiveAuctionScreenState extends ConsumerState<LiveAuctionScreen>
   }
 }
 
-/// Gerçekçi 3D Perspektif Depo İç Ortamı (Tavan, Yan Duvarlar, Arka Duvar, Beton Zemin ve Işık Huzmesi)
-class _StoragePreviewEnvironmentPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
 
-    // 1. Tavan Bölgesi (Y: 0 -> h * 0.18)
-    final ceilingRect = Rect.fromLTWH(0, 0, w, h * 0.20);
-    final ceilingPaint = Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [Color(0xFF1B1917), Color(0xFF282420)],
-      ).createShader(ceilingRect);
-    canvas.drawRect(ceilingRect, ceilingPaint);
-
-    // Tavan çelik kirişleri
-    final girderPaint = Paint()
-      ..color = const Color(0xFF141210)
-      ..strokeWidth = 3.0;
-    canvas.drawLine(Offset(0, h * 0.08), Offset(w, h * 0.08), girderPaint);
-    canvas.drawLine(Offset(0, h * 0.16), Offset(w, h * 0.16), girderPaint);
-
-    // 2. Arka Tuğla / Sac Duvar (Y: h * 0.18 -> h * 0.62)
-    final backWallRect = Rect.fromLTWH(w * 0.10, h * 0.18, w * 0.80, h * 0.44);
-    final backWallPaint = Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [Color(0xFF2A241F), Color(0xFF1C1814)],
-      ).createShader(backWallRect);
-    canvas.drawRect(backWallRect, backWallPaint);
-
-    // Arka duvar tuğla/derz çizgileri
-    final brickPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.04)
-      ..strokeWidth = 1.0;
-    for (double y = h * 0.20; y < h * 0.62; y += 14) {
-      canvas.drawLine(Offset(w * 0.10, y), Offset(w * 0.90, y), brickPaint);
-    }
-
-    // 3. Sol Yan Duvar (Perspektif)
-    final leftWallPath = Path()
-      ..moveTo(0, 0)
-      ..lineTo(w * 0.10, h * 0.18)
-      ..lineTo(w * 0.10, h * 0.62)
-      ..lineTo(0, h)
-      ..close();
-    final leftWallPaint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.centerLeft,
-        end: Alignment.centerRight,
-        colors: [const Color(0xFF12100E), const Color(0xFF231E19)],
-      ).createShader(Rect.fromLTWH(0, 0, w * 0.10, h));
-    canvas.drawPath(leftWallPath, leftWallPaint);
-
-    // Sol Kepenk Rayı & Panelleri
-    final railPaint = Paint()
-      ..color = const Color(0xFF38322B)
-      ..strokeWidth = 2.5;
-    canvas.drawLine(Offset(w * 0.09, h * 0.18), Offset(w * 0.09, h * 0.62), railPaint);
-
-    // 4. Sağ Yan Duvar (Perspektif)
-    final rightWallPath = Path()
-      ..moveTo(w, 0)
-      ..lineTo(w * 0.90, h * 0.18)
-      ..lineTo(w * 0.90, h * 0.62)
-      ..lineTo(w, h)
-      ..close();
-    final rightWallPaint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.centerRight,
-        end: Alignment.centerLeft,
-        colors: [const Color(0xFF12100E), const Color(0xFF231E19)],
-      ).createShader(Rect.fromLTWH(w * 0.90, 0, w * 0.10, h));
-    canvas.drawPath(rightWallPath, rightWallPaint);
-
-    // Sağ Kepenk Rayı
-    canvas.drawLine(Offset(w * 0.91, h * 0.18), Offset(w * 0.91, h * 0.62), railPaint);
-
-    // 5. Beton Zemin (Y: h * 0.62 -> h)
-    final floorPath = Path()
-      ..moveTo(0, h)
-      ..lineTo(w * 0.10, h * 0.62)
-      ..lineTo(w * 0.90, h * 0.62)
-      ..lineTo(w, h)
-      ..close();
-    final floorPaint = Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [Color(0xFF24201C), Color(0xFF110F0D)],
-      ).createShader(Rect.fromLTWH(0, h * 0.62, w, h * 0.38));
-    canvas.drawPath(floorPath, floorPaint);
-
-    // Zemin perspektif kılavuz çizgileri
-    final floorGridPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.035)
-      ..strokeWidth = 1.0;
-    canvas.drawLine(Offset(w * 0.30, h * 0.62), Offset(w * 0.20, h), floorGridPaint);
-    canvas.drawLine(Offset(w * 0.50, h * 0.62), Offset(w * 0.50, h), floorGridPaint);
-    canvas.drawLine(Offset(w * 0.70, h * 0.62), Offset(w * 0.80, h), floorGridPaint);
-
-    // 6. Tavandan Sarkan Endüstriyel Lamba & Sıcak Işık Konisi
-    final lightConePath = Path()
-      ..moveTo(w * 0.5, 0)
-      ..lineTo(w * 0.95, h)
-      ..lineTo(w * 0.05, h)
-      ..close();
-    final lightPaint = Paint()
-      ..shader = RadialGradient(
-        center: const Alignment(0, -1),
-        radius: 1.15,
-        colors: [
-          Colors.amber.withValues(alpha: 0.20),
-          Colors.amber.withValues(alpha: 0.06),
-          Colors.transparent,
-        ],
-        stops: const [0.0, 0.45, 1.0],
-      ).createShader(Rect.fromLTWH(0, 0, w, h));
-    canvas.drawPath(lightConePath, lightPaint);
-
-    // Lamba kablosu ve ampul
-    final lampCordPaint = Paint()
-      ..color = Colors.black
-      ..strokeWidth = 2.0;
-    canvas.drawLine(Offset(w * 0.5, 0), Offset(w * 0.5, 18), lampCordPaint);
-    final bulbGlowPaint = Paint()..color = Colors.amber;
-    canvas.drawCircle(Offset(w * 0.5, 20), 4.5, bulbGlowPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
 
 /// Endüstriyel Çelik / Alüminyum Sarmal Kepenk (Roller Shutter) Animasyon Çizicisi
 class _RollerShutterPainter extends CustomPainter {

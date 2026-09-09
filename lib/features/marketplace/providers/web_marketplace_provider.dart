@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:yeni_oyun_sablon/core/database/models/item_model.dart';
+import 'package:yeni_oyun_sablon/core/services/game_audio_service.dart';
 import 'package:yeni_oyun_sablon/features/marketplace/models/web_listing_model.dart';
 import 'package:yeni_oyun_sablon/features/onboarding/providers/ftue_provider.dart';
 import 'package:yeni_oyun_sablon/features/player_profile/providers/player_profile_provider.dart';
@@ -216,6 +217,7 @@ class WebMarketplaceNotifier extends StateNotifier<WebMarketplaceState> {
       final finalPrice = listing.pendingOfferPrice!;
       ref.read(playerProfileProvider.notifier).addCash(finalPrice);
       ref.read(playerProfileProvider.notifier).addReputation(25);
+      GameAudioService.instance.playCoin();
 
       final updated = List<WebListingModel>.from(state.listings)..removeAt(index);
       state = state.copyWith(listings: updated);
@@ -227,6 +229,7 @@ class WebMarketplaceNotifier extends StateNotifier<WebMarketplaceState> {
     final index = state.listings.indexWhere((l) => l.id == listingId);
     if (index == -1) return;
 
+    GameAudioService.instance.playClick();
     final listing = state.listings[index];
     final updated = List<WebListingModel>.from(state.listings);
     updated[index] = listing.copyWith(clearOffer: true);
@@ -242,6 +245,7 @@ class WebMarketplaceNotifier extends StateNotifier<WebMarketplaceState> {
     if (listing.isSold) {
       ref.read(playerProfileProvider.notifier).addCash(listing.listingPrice);
       ref.read(playerProfileProvider.notifier).addReputation(20);
+      GameAudioService.instance.playCoin();
 
       final updated = List<WebListingModel>.from(state.listings)..removeAt(index);
       state = state.copyWith(listings: updated);
@@ -253,6 +257,7 @@ class WebMarketplaceNotifier extends StateNotifier<WebMarketplaceState> {
     final index = state.listings.indexWhere((l) => l.id == listingId);
     if (index == -1) return null;
 
+    GameAudioService.instance.playClick();
     final listing = state.listings[index];
     final updated = List<WebListingModel>.from(state.listings)..removeAt(index);
     state = state.copyWith(listings: updated);

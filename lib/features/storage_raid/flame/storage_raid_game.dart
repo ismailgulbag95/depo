@@ -7,15 +7,18 @@ import 'package:yeni_oyun_sablon/features/storage_raid/flame/components/raid_ite
 import 'package:yeni_oyun_sablon/features/storage_raid/services/storage_generator_service.dart';
 
 /// 2D Katmanlı Gerçekçi Depo Yağmalama Flame Sahnesi (ADR-019 & ADR-022)
+/// 2D Katmanlı Gerçekçi Depo Yağmalama Flame Sahnesi (ADR-019 & ADR-022)
 class StorageRaidGame extends FlameGame {
   final GeneratedStorageUnit storageUnit;
-  final void Function(RaidItemComponent item) onItemSelected;
-  final VoidCallback onRaidFinished;
+  final void Function(RaidItemComponent item)? onItemSelected;
+  final VoidCallback? onRaidFinished;
+  final bool isReadOnly;
 
   StorageRaidGame({
     required this.storageUnit,
-    required this.onItemSelected,
-    required this.onRaidFinished,
+    this.onItemSelected,
+    this.onRaidFinished,
+    this.isReadOnly = false,
   });
 
   /// Sıfır Jank için Flutter HUD ile paylaşılan sayaç
@@ -37,6 +40,11 @@ class StorageRaidGame extends FlameGame {
   Future<void> onLoad() async {
     super.onLoad();
     images.prefix = '';
+
+    if (isReadOnly) {
+      isRaidActive = false;
+      isTimerPaused = true;
+    }
 
     // 1. Gerçekçi Depo Arka Planı (Beton Zemin, Tuğla Duvar, Işık Huzmesi)
     _buildRealisticWarehouseEnvironment();
@@ -63,43 +71,67 @@ class StorageRaidGame extends FlameGame {
     add(wallComponent);
   }
 
-  /// Eşyaları ASLA havada uçurmadan, doğrudan deponun beton zeminine ve 12 sütunluk ızgaraya göre yerleştirir
+  /// Eşyaları gerçek fiziksel oda yüksekliği oranlarına (Buzdolabı: %60, Ketıl: %17, Kalem/Buji: %8)
+  /// ve deponun perspektif zemin çizgilerine göre milimetrik oturtur.
   Future<void> _populatePhysicalItems() async {
     final w = size.x;
     final h = size.y;
 
-    // 12 Sütunlu Depo Zemin Izgara Birimi
-    final gridUnitW = w / 12.0;
-    final gridUnitH = h / 8.5;
-
     // Katman Zemin Taban Çizgileri (2.5D Derinlik Perspektifi)
-    final l3GroundY = h * 0.82; // Arka Sıra
-    final l2GroundY = h * 0.88; // Orta Sıra
-    final l1GroundY = h * 0.94; // Ön Sıra
+    // anchor: Anchor.bottomCenter olduğundan tüm eşyaların tabanı bu çizgilere tam oturur.
+    final l3GroundY = h * 0.80; // Arka Sıra (Perspektif olarak arkada ve yukarıda)
+    final l2GroundY = h * 0.87; // Orta Sıra
+    final l1GroundY = h * 0.94; // Ön Sıra (En önde ve aşağıda)
 
-    // 1. KATMAN 3: En Arka Zemin Sırası (Küçük & Değerli Eşyalar - Altın, Mücevher, Saatler)
+    // Eşya görsellerini asenkron ve güvenli yükleme yardımcı fonksiyonu
+    Future<Sprite?> safeLoadItemSprite(ItemModel item) async {
+      if (item.spritePath.isEmpty) return null;
+      try {
+        final fullPath = item.spritePath.startsWith('assets/')
+            ? item.spritePath
+            : 'assets/${item.spritePath}';
+        return await loadSprite(fullPath).timeout(const Duration(milliseconds: 700));
+      } catch (e) {
+        debugPrint('Sprite yüklenemedi, yedek kart kullanılacak: ${item.code} ($e)');
+        return null;
+      }
+    }
+
+    // Ortak boyutlandırma motoru: Oda yüksekliği oranına göre yükseklik ve en-boy korumalı genişlik
+    Vector2 calculateItemSize(ItemModel item, Sprite? sprite, double layerScaleMultiplier) {
+      // roomHeightRatio: Buzdolabı ~0.62, Büyük TV ~0.40, Mikrodalga ~0.26, Ketıl ~0.17, Buji/Kalem ~0.08
+      final targetH = (h * item.roomHeightRatio * layerScaleMultiplier).clamp(18.0, h * 0.75);
+
+      double aspect = 1.0;
+      if (sprite != null && sprite.srcSize.y > 0) {
+        aspect = sprite.srcSize.x / sprite.srcSize.y;
+      } else {
+        aspect = item.width / item.height.toDouble();
+      }
+      aspect = aspect.clamp(0.4, 2.5);
+
+      final targetW = (targetH * aspect).clamp(18.0, w * 0.65);
+      return Vector2(targetW, targetH);
+    }
+
+    // 1. KATMAN 3: En Arka Sıra (Küçük & Mikro Eşyalar: Kalem, Buji, Külçe, Takı vb.)
     final l3 = storageUnit.layer3Items;
-    final l3Spacing = w / (l3.length + 1);
+    final l3StartX = w * 0.20;
+    final l3EndX = w * 0.80;
+    final l3Spacing = (l3EndX - l3StartX) / (l3.length + 1);
+
     for (int i = 0; i < l3.length; i++) {
       final item = l3[i];
-      Sprite? sprite;
-      try {
-        final spritePath = item.spritePath.startsWith('assets/')
-            ? item.spritePath.substring(7)
-            : item.spritePath;
-        sprite = await loadSprite(spritePath);
-      } catch (_) {}
-
-      // Izgaraya göre boyutlandırma (Genişlik: item.width * gridUnitW, Yükseklik: item.height * gridUnitH)
-      final itemW = (item.width * gridUnitW * 0.75).clamp(38.0, w * 0.25);
-      final itemH = (item.height * gridUnitH * 0.85).clamp(38.0, h * 0.30);
+      final sprite = await safeLoadItemSprite(item);
+      // Katman 3 için derinlik perspektif katsayısı: 0.85
+      final itemSize = calculateItemSize(item, sprite, 0.85);
 
       final comp = RaidItemComponent(
         itemModel: item,
         layer: 3,
-        shadowOpacity: 1.0, // Zifiri karanlık siluet
-        position: Vector2((i + 1) * l3Spacing, l3GroundY),
-        size: Vector2(itemW, itemH),
+        shadowOpacity: isReadOnly ? 0.35 : 1.0,
+        position: Vector2(l3StartX + (i + 1) * l3Spacing, l3GroundY),
+        size: itemSize,
         sprite: sprite,
         onSelected: _handleItemTap,
       )..showDebugGrid = showDebugGrid;
@@ -107,29 +139,24 @@ class StorageRaidGame extends FlameGame {
       _activeRaidItems.add(comp);
     }
 
-    // 2. KATMAN 2: Orta Zemin Sırası (Kutular, Aletler, Elektronikler, Müzik Aletleri)
+    // 2. KATMAN 2: Orta Sıra (Orta & Küçük Eşyalar: Mikrodalga, Ketıl, Süpürge, Alet Çantası)
     final l2 = storageUnit.layer2Items;
-    final l2Spacing = w / (l2.length + 1);
+    final l2StartX = w * 0.15;
+    final l2EndX = w * 0.85;
+    final l2Spacing = (l2EndX - l2StartX) / (l2.length + 1);
+
     for (int i = 0; i < l2.length; i++) {
       final item = l2[i];
-      Sprite? sprite;
-      try {
-        final spritePath = item.spritePath.startsWith('assets/')
-            ? item.spritePath.substring(7)
-            : item.spritePath;
-        sprite = await loadSprite(spritePath);
-      } catch (_) {}
-
-      // Izgaraya göre boyutlandırma
-      final itemW = (item.width * gridUnitW * 1.05).clamp(55.0, w * 0.35);
-      final itemH = (item.height * gridUnitH * 1.15).clamp(60.0, h * 0.45);
+      final sprite = await safeLoadItemSprite(item);
+      // Katman 2 için derinlik perspektif katsayısı: 0.95
+      final itemSize = calculateItemSize(item, sprite, 0.95);
 
       final comp = RaidItemComponent(
         itemModel: item,
         layer: 2,
-        shadowOpacity: 0.75, // %75 koyu siluet
-        position: Vector2((i + 1) * l2Spacing, l2GroundY),
-        size: Vector2(itemW, itemH),
+        shadowOpacity: isReadOnly ? 0.18 : 0.75,
+        position: Vector2(l2StartX + (i + 1) * l2Spacing, l2GroundY),
+        size: itemSize,
         sprite: sprite,
         onSelected: _handleItemTap,
       )..showDebugGrid = showDebugGrid;
@@ -137,29 +164,24 @@ class StorageRaidGame extends FlameGame {
       _activeRaidItems.add(comp);
     }
 
-    // 3. KATMAN 1: En Ön Zemin Sırası (Büyük Mobilyalar, Kanepe, Buzdolabı, V8 Motor, Gardırop)
+    // 3. KATMAN 1: En Ön Sıra (Mega & Büyük Parçalar: Buzdolabı, Kanepe, Dolap, V8 Motor)
     final l1 = storageUnit.layer1Items;
-    final l1Spacing = w / (l1.length + 1);
+    final l1StartX = w * 0.10;
+    final l1EndX = w * 0.90;
+    final l1Spacing = (l1EndX - l1StartX) / (l1.length + 1);
+
     for (int i = 0; i < l1.length; i++) {
       final item = l1[i];
-      Sprite? sprite;
-      try {
-        final spritePath = item.spritePath.startsWith('assets/')
-            ? item.spritePath.substring(7)
-            : item.spritePath;
-        sprite = await loadSprite(spritePath);
-      } catch (_) {}
-
-      // Izgaraya göre boyutlandırma (Ön sıra heybetli boyut)
-      final itemW = (item.width * gridUnitW * 1.35).clamp(90.0, w * 0.48);
-      final itemH = (item.height * gridUnitH * 1.45).clamp(95.0, h * 0.60);
+      final sprite = await safeLoadItemSprite(item);
+      // Katman 1 için tam ön plan boyutu (katsayı: 1.05)
+      final itemSize = calculateItemSize(item, sprite, 1.05);
 
       final comp = RaidItemComponent(
         itemModel: item,
         layer: 1,
-        shadowOpacity: 0.0, // Tamamen net
-        position: Vector2((i + 1) * l1Spacing, l1GroundY),
-        size: Vector2(itemW, itemH),
+        shadowOpacity: 0.0,
+        position: Vector2(l1StartX + (i + 1) * l1Spacing, l1GroundY),
+        size: itemSize,
         sprite: sprite,
         onSelected: _handleItemTap,
       )..showDebugGrid = showDebugGrid;
@@ -169,7 +191,7 @@ class StorageRaidGame extends FlameGame {
   }
 
   void _handleItemTap(RaidItemComponent tappedItem) {
-    if (!isRaidActive) return;
+    if (isReadOnly || !isRaidActive) return;
 
     if (selectedItem != null) {
       selectedItem!.unselect();
@@ -177,7 +199,7 @@ class StorageRaidGame extends FlameGame {
 
     selectedItem = tappedItem;
     selectedItem!.select();
-    onItemSelected(tappedItem);
+    onItemSelected?.call(tappedItem);
   }
 
   /// Seçili eşya hurdaya ayrıldığında veya araca yüklendiğinde çağrılır
@@ -230,7 +252,7 @@ class StorageRaidGame extends FlameGame {
   void finishRaid() {
     if (!isRaidActive) return;
     isRaidActive = false;
-    onRaidFinished();
+    onRaidFinished?.call();
   }
 
   List<ItemModel> getRemainingItems() {

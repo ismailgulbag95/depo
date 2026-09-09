@@ -43,6 +43,16 @@ class GameAssetPaths {
   static const String iconMapTavern = 'assets/ui/icon_map_tavern.png';
   static const String iconMapDungeon = 'assets/ui/icon_map_dungeon.png';
 
+  // --- SES EFEKTLERİ (Audio Sound Effects) ---
+  static const String sfxGavel = 'audio/gavel.wav';
+  static const String sfxCoin = 'audio/coin.wav';
+  static const String sfxClick = 'audio/click.wav';
+  static const String sfxCrush = 'audio/crush.wav';
+  static const String sfxHit = 'audio/hit.wav';
+  static const String sfxVictory = 'audio/victory.wav';
+  static const String sfxWarning = 'audio/warning.wav';
+  static const String sfxPack = 'audio/pack.wav';
+
   /// Rakip ismine göre uygun karakter portresini döner
   static String getRivalAvatar(String rivalName) {
     final lower = rivalName.toLowerCase();
@@ -60,3 +70,4 @@ class GameAssetPaths {
     return trunkPickup;
   }
 }
+

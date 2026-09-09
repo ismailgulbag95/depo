@@ -40,8 +40,16 @@ class DatabaseService {
       final jsonString = await rootBundle.loadString('assets/data/default_items.json');
       final List<dynamic> jsonList = jsonDecode(jsonString);
 
-      if (_itemsBox.length < jsonList.length) {
+      // Şema güncellemesi veya eşya sayısı değişikliği kontrolü
+      final firstItemData = _itemsBox.isNotEmpty ? _itemsBox.get(1) : null;
+      final needsReseed = _itemsBox.length != jsonList.length ||
+          (firstItemData is Map && !firstItemData.containsKey('roomHeightRatio'));
+
+      if (needsReseed) {
         await _itemsBox.clear();
+      }
+
+      if (_itemsBox.isEmpty) {
         int autoId = 1;
         for (final itemJson in jsonList) {
           final item = ItemModel(
@@ -60,6 +68,7 @@ class DatabaseService {
                     .toList() ??
                 [1],
             weight: (itemJson['weight'] as num?)?.toDouble() ?? 1.0,
+            roomHeightRatio: (itemJson['roomHeightRatio'] as num?)?.toDouble(),
             spritePath: (itemJson['spritePath'] ?? '') as String,
             condition: ItemCondition.values.firstWhere(
               (c) => c.name == itemJson['condition'],
@@ -135,6 +144,7 @@ class DatabaseService {
                     .toList() ??
                 [1],
             weight: (itemJson['weight'] as num?)?.toDouble() ?? 1.0,
+            roomHeightRatio: (itemJson['roomHeightRatio'] as num?)?.toDouble(),
             spritePath: (itemJson['spritePath'] ?? '') as String,
             condition: ItemCondition.values.firstWhere(
               (c) => c.name == itemJson['condition'],
@@ -197,6 +207,11 @@ class DatabaseService {
       return VehicleModel.fromMap(data);
     }
     return null;
+  }
+
+  /// Eşyayı günceller ve veritabanına kaydeder
+  Future<void> saveItem(ItemModel item) async {
+    await _itemsBox.put(item.id, item.toMap());
   }
 
   /// Aracı kaydeder

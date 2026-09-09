@@ -19,13 +19,14 @@ class ArcadeButton extends StatefulWidget {
     required this.text,
     this.icon,
     required this.onPressed,
-    this.primaryColor = GameColors.profitGreen,
+    Color? color,
+    Color? primaryColor,
     this.shadowColor = const Color(0xFF00893E),
     this.textColor = Colors.black,
     this.height = 48,
     this.width,
     this.fontSize = 14,
-  });
+  }) : primaryColor = color ?? primaryColor ?? GameColors.profitGreen;
 
   @override
   State<ArcadeButton> createState() => _ArcadeButtonState();

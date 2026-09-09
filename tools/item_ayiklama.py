@@ -19,7 +19,10 @@ from pathlib import Path
 from PIL import Image, ImageFilter
 
 WORKSPACE_DIR = Path(__file__).resolve().parent.parent
-BRAIN_DIR = Path(r"C:\Users\ismai\.gemini\antigravity-ide\brain\aa439e28-03ef-43f6-9d5a-82e8971c6a1f")
+BRAIN_DIRS = [
+    Path(r"C:\Users\ismai\.gemini\antigravity-ide\brain\9aa163c3-b05b-4a95-85fb-c3a84517d898"),
+    Path(r"C:\Users\ismai\.gemini\antigravity-ide\brain\aa439e28-03ef-43f6-9d5a-82e8971c6a1f"),
+]
 RAW_INPUT_DIR = WORKSPACE_DIR / "assets" / "raw_input"
 ITEMS_OUTPUT_DIR = WORKSPACE_DIR / "assets" / "items"
 CSV_PATH = WORKSPACE_DIR / "docs" / "Gorsel_Uretim_Prompt_Rehberi.csv"
@@ -46,27 +49,41 @@ BRAIN_MAPPING = {
     "heavy_industrial_machinery_1788334983245.jpg": "19_agir_sanayi.jpg",
     "military_survival_gear_1788335052942.jpg": "20_taktik_hayatta_kalma.jpg",
     ".user_uploaded/media_1788344053883.jpg": "21_maden_ve_taslar.jpg",
-    ".user_uploaded/media_1788344309630.jpg": "22_melez_arcane_tech.jpg"
+    ".user_uploaded/media_1788344309630.jpg": "22_melez_arcane_tech.jpg",
+    "mutfak_gastronomi_grid_1788862623473.jpg": "23_mutfak_gastronomi.jpg",
+    "kilit_hirsizlik_grid_1788862644994.jpg": "24_kilit_ve_hirsizlik.jpg",
+    "tip_saglik_grid_1788862672090.jpg": "25_tip_ve_saglik.jpg",
+    "denizcilik_balikcilik_grid_1788865862718.jpg": "26_denizcilik_ve_balikcilik.jpg",
+    "arkeoloji_antik_kalintilar_grid_1788865879977.jpg": "27_arkeoloji_ve_antik_kalintilar.jpg",
+    "tarim_bahce_ekipmanlari_grid_1788865898264.jpg": "28_tarim_ve_bahce_ekipmanlari.jpg",
 }
+
 
 def step1_collect_raw_images():
     RAW_INPUT_DIR.mkdir(parents=True, exist_ok=True)
     count = 0
     for src_name, target_name in BRAIN_MAPPING.items():
-        src_file = BRAIN_DIR / src_name
         dest_file = RAW_INPUT_DIR / target_name
-        if src_file.exists():
-            shutil.copy2(src_file, dest_file)
+        if dest_file.exists():
             count += 1
+            continue
+        for b_dir in BRAIN_DIRS:
+            src_file = b_dir / src_name
+            if src_file.exists():
+                shutil.copy2(src_file, dest_file)
+                count += 1
+                break
             
     # Kullanıcı yüklemelerinden doğrudan kopyala
-    user_up = BRAIN_DIR / ".user_uploaded"
-    if (user_up / "media_1788344053883.jpg").exists():
-        shutil.copy2(user_up / "media_1788344053883.jpg", RAW_INPUT_DIR / "21_maden_ve_taslar.jpg")
-    if (user_up / "media_1788344309630.jpg").exists():
-        shutil.copy2(user_up / "media_1788344309630.jpg", RAW_INPUT_DIR / "22_melez_arcane_tech.jpg")
+    for b_dir in BRAIN_DIRS:
+        user_up = b_dir / ".user_uploaded"
+        if (user_up / "media_1788344053883.jpg").exists() and not (RAW_INPUT_DIR / "21_maden_ve_taslar.jpg").exists():
+            shutil.copy2(user_up / "media_1788344053883.jpg", RAW_INPUT_DIR / "21_maden_ve_taslar.jpg")
+        if (user_up / "media_1788344309630.jpg").exists() and not (RAW_INPUT_DIR / "22_melez_arcane_tech.jpg").exists():
+            shutil.copy2(user_up / "media_1788344309630.jpg", RAW_INPUT_DIR / "22_melez_arcane_tech.jpg")
         
     return count
+
 
 def slugify(text):
     text = text.replace("İ", "i").replace("I", "i").replace("ı", "i")
@@ -98,16 +115,7 @@ def load_metadata():
                 category_map[f"{int(no):02d}"] = data
     return category_map
 
-def step1_collect_raw_images():
-    RAW_INPUT_DIR.mkdir(parents=True, exist_ok=True)
-    count = 0
-    for src_name, target_name in BRAIN_MAPPING.items():
-        src_file = BRAIN_DIR / src_name
-        dest_file = RAW_INPUT_DIR / target_name
-        if src_file.exists():
-            shutil.copy2(src_file, dest_file)
-            count += 1
-    return count
+
 
 def extract_binary_mask(img):
     """
@@ -505,12 +513,78 @@ CATEGORY_ANCHORS = {
         {"name": "gardirop", "test": lambda c, bw, bh, w, h: (c[0]/w) < 0.50 and (c[1]/h) < 0.45},
         {"name": "cift_kisilik_yatak", "test": lambda c, bw, bh, w, h: (c[0]/w) >= 0.50 and (c[1]/h) < 0.45},
         {"name": "kadife_kanepe", "test": lambda c, bw, bh, w, h: (c[0]/w) < 0.60 and 0.45 <= (c[1]/h) < 0.72},
-        {"name": "elbise_askiligi", "test": lambda c, bw, bh, w, h: 0.60 <= (c[0]/w) < 0.80 and (c[1]/h) >= 0.45 and bh > 250},
-        {"name": "duvar_aynasi", "test": lambda c, bw, bh, w, h: (c[0]/w) >= 0.75 and 0.45 <= (c[1]/h) < 0.75},
-        {"name": "berjer_koltuk", "test": lambda c, bw, bh, w, h: (c[0]/w) < 0.30 and (c[1]/h) >= 0.72},
-        {"name": "orta_sehpa", "test": lambda c, bw, bh, w, h: 0.30 <= (c[0]/w) < 0.65 and (c[1]/h) >= 0.72},
-        {"name": "abajur_lamba", "test": lambda c, bw, bh, w, h: (c[0]/w) >= 0.75 and (c[1]/h) >= 0.75},
     ],
+    "23_mutfak_gastronomi": [
+        {"name": "dokum_demir_tava", "test": lambda c, bw, bh, w, h: (c[0]/w) < 0.35 and (c[1]/h) < 0.40},
+        {"name": "bakir_tencere", "test": lambda c, bw, bh, w, h: 0.35 <= (c[0]/w) < 0.68 and (c[1]/h) < 0.40},
+        {"name": "bakir_semaver", "test": lambda c, bw, bh, w, h: (c[0]/w) >= 0.68 and (c[1]/h) < 0.48},
+        {"name": "porselen_tabak_seti", "test": lambda c, bw, bh, w, h: (c[0]/w) < 0.35 and 0.40 <= (c[1]/h) < 0.70},
+        {"name": "ahsap_oklava", "test": lambda c, bw, bh, w, h: 0.35 <= (c[0]/w) < 0.75 and 0.40 <= (c[1]/h) < 0.58},
+        {"name": "et_satiri", "test": lambda c, bw, bh, w, h: (c[0]/w) >= 0.65 and 0.48 <= (c[1]/h) < 0.70},
+        {"name": "mermer_havan", "test": lambda c, bw, bh, w, h: (c[0]/w) < 0.30 and (c[1]/h) >= 0.70},
+        {"name": "sef_bicagi", "test": lambda c, bw, bh, w, h: 0.30 <= (c[0]/w) < 0.45 and (c[1]/h) >= 0.65},
+        {"name": "celik_cirpici", "test": lambda c, bw, bh, w, h: 0.45 <= (c[0]/w) < 0.60 and (c[1]/h) >= 0.65},
+        {"name": "biber_ogutucu", "test": lambda c, bw, bh, w, h: 0.60 <= (c[0]/w) < 0.75 and (c[1]/h) >= 0.65},
+        {"name": "el_kahve_degirmeni", "test": lambda c, bw, bh, w, h: (c[0]/w) >= 0.75 and (c[1]/h) >= 0.65},
+    ],
+    "24_kilit_ve_hirsizlik": [
+        {"name": "deri_kilifli_maymuncuk_seti", "test": lambda c, bw, bh, w, h: (c[0]/w) < 0.35 and (c[1]/h) < 0.45},
+        {"name": "kasa_stetoskobu", "test": lambda c, bw, bh, w, h: 0.35 <= (c[0]/w) < 0.60 and (c[1]/h) < 0.45},
+        {"name": "cam_vantuzlu_kesici", "test": lambda c, bw, bh, w, h: 0.60 <= (c[0]/w) < 0.76 and (c[1]/h) < 0.45},
+        {"name": "sessiz_akulu_matkap", "test": lambda c, bw, bh, w, h: (c[0]/w) >= 0.75 and (c[1]/h) < 0.45},
+        {"name": "uv_mor_otesisi_fener", "test": lambda c, bw, bh, w, h: (c[0]/w) < 0.38 and 0.45 <= (c[1]/h) < 0.68},
+        {"name": "sifre_kirici_dekoder", "test": lambda c, bw, bh, w, h: 0.38 <= (c[0]/w) < 0.70 and 0.45 <= (c[1]/h) < 0.70},
+        {"name": "sis_bombasi", "test": lambda c, bw, bh, w, h: (c[0]/w) < 0.25 and (c[1]/h) >= 0.68},
+        {"name": "celik_tel_kanca", "test": lambda c, bw, bh, w, h: 0.25 <= (c[0]/w) < 0.72 and (c[1]/h) >= 0.68},
+        {"name": "sahte_kimlik_cuzdani", "test": lambda c, bw, bh, w, h: (c[0]/w) >= 0.72 and (c[1]/h) >= 0.55},
+    ],
+    "25_tip_ve_saglik": [
+        {"name": "tasinabilir_defibrilator", "test": lambda c, bw, bh, w, h: (c[0]/w) < 0.32 and (c[1]/h) < 0.30},
+        {"name": "metal_ilk_yardim_cantasi", "test": lambda c, bw, bh, w, h: 0.32 <= (c[0]/w) < 0.62 and (c[1]/h) < 0.30},
+        {"name": "dijital_tansiyon_aleti", "test": lambda c, bw, bh, w, h: 0.62 <= (c[0]/w) < 0.82 and (c[1]/h) < 0.30},
+        {"name": "tibbi_stetoskop", "test": lambda c, bw, bh, w, h: (c[0]/w) >= 0.82 and (c[1]/h) < 0.35},
+        {"name": "cerrahi_nester_seti", "test": lambda c, bw, bh, w, h: (c[0]/w) < 0.30 and 0.25 <= (c[1]/h) < 0.45},
+        {"name": "otoskop_muayene_feneri", "test": lambda c, bw, bh, w, h: (c[0]/w) >= 0.80 and 0.30 <= (c[1]/h) < 0.55},
+        {"name": "ilac_ampul_seti", "test": lambda c, bw, bh, w, h: (c[0]/w) < 0.40 and (c[1]/h) >= 0.80},
+        {"name": "turnike", "test": lambda c, bw, bh, w, h: 0.40 <= (c[0]/w) < 0.65 and (c[1]/h) >= 0.75},
+        {"name": "cerrahi_makas", "test": lambda c, bw, bh, w, h: (c[0]/w) >= 0.65 and (c[1]/h) >= 0.80},
+    ],
+    "26_denizcilik_ve_balikcilik": [
+        {"name": "gemi_dumeni", "test": lambda c, bw, bh, w, h: (c[0]/w) < 0.35 and (c[1]/h) < 0.38},
+        {"name": "cipa_ve_halat", "test": lambda c, bw, bh, w, h: 0.35 <= (c[0]/w) < 0.65 and (c[1]/h) < 0.38},
+        {"name": "pirinc_sekstant_usturlap", "test": lambda c, bw, bh, w, h: (c[0]/w) >= 0.65 and (c[1]/h) < 0.38},
+        {"name": "balikci_zipkini", "test": lambda c, bw, bh, w, h: (c[0]/w) < 0.35 and 0.38 <= (c[1]/h) < 0.65},
+        {"name": "can_simidi", "test": lambda c, bw, bh, w, h: 0.35 <= (c[0]/w) < 0.65 and 0.38 <= (c[1]/h) < 0.65},
+        {"name": "gemici_feneri", "test": lambda c, bw, bh, w, h: (c[0]/w) >= 0.65 and 0.38 <= (c[1]/h) < 0.68},
+        {"name": "pirinc_durbun", "test": lambda c, bw, bh, w, h: (c[0]/w) < 0.65 and 0.65 <= (c[1]/h) < 0.82},
+        {"name": "cep_pusulasi", "test": lambda c, bw, bh, w, h: (c[0]/w) >= 0.65 and (c[1]/h) >= 0.68},
+        {"name": "makarali_olta", "test": lambda c, bw, bh, w, h: (c[1]/h) >= 0.82},
+    ],
+    "27_arkeoloji_ve_antik_kalintilar": [
+        {"name": "altin_firavun_maski", "test": lambda c, bw, bh, w, h: (c[0]/w) < 0.28 and (c[1]/h) < 0.35},
+        {"name": "antik_amfora", "test": lambda c, bw, bh, w, h: 0.28 <= (c[0]/w) < 0.50 and (c[1]/h) < 0.35},
+        {"name": "scarab_bocegi_tilsimi", "test": lambda c, bw, bh, w, h: 0.50 <= (c[0]/w) < 0.75 and (c[1]/h) < 0.35},
+        {"name": "trilobit_fosili", "test": lambda c, bw, bh, w, h: (c[0]/w) >= 0.75 and (c[1]/h) < 0.35},
+        {"name": "jeolog_kazi_cekici", "test": lambda c, bw, bh, w, h: (c[0]/w) < 0.25 and 0.35 <= (c[1]/h) < 0.75},
+        {"name": "toz_temizleme_fircasi", "test": lambda c, bw, bh, w, h: 0.25 <= (c[0]/w) < 0.50 and 0.35 <= (c[1]/h) < 0.75},
+        {"name": "pirinc_buyutec", "test": lambda c, bw, bh, w, h: 0.50 <= (c[0]/w) < 0.75 and 0.35 <= (c[1]/h) < 0.75},
+        {"name": "civi_yazili_kil_tablet", "test": lambda c, bw, bh, w, h: (c[0]/w) >= 0.75 and 0.35 <= (c[1]/h) < 0.75},
+        {"name": "kazi_saha_defteri", "test": lambda c, bw, bh, w, h: (c[0]/w) < 0.35 and (c[1]/h) >= 0.75},
+        {"name": "arkeolog_malasi", "test": lambda c, bw, bh, w, h: 0.35 <= (c[0]/w) < 0.50 and (c[1]/h) >= 0.75},
+        {"name": "antik_baykus_sikkesi", "test": lambda c, bw, bh, w, h: 0.50 <= (c[0]/w) < 0.75 and (c[1]/h) >= 0.75},
+        {"name": "zincirli_antik_pusula", "test": lambda c, bw, bh, w, h: (c[0]/w) >= 0.75 and (c[1]/h) >= 0.75},
+    ],
+    "28_tarim_ve_bahce_ekipmanlari": [
+        {"name": "motorlu_tirpan", "test": lambda c, bw, bh, w, h: (c[0]/w) < 0.25 and bh > 500},
+        {"name": "cim_bicme_makinesi", "test": lambda c, bw, bh, w, h: 0.22 <= (c[0]/w) < 0.52 and (c[1]/h) < 0.55},
+        {"name": "dovme_bahce_kuregi", "test": lambda c, bw, bh, w, h: 0.52 <= (c[0]/w) < 0.75 and (c[1]/h) < 0.55},
+        {"name": "budama_makasi", "test": lambda c, bw, bh, w, h: (c[0]/w) >= 0.75 and (c[1]/h) < 0.40},
+        {"name": "demir_yaba_tirmik", "test": lambda c, bw, bh, w, h: (c[0]/w) >= 0.75 and (c[1]/h) >= 0.40},
+        {"name": "elektrikli_su_pompasi", "test": lambda c, bw, bh, w, h: (c[0]/w) < 0.30 and (c[1]/h) >= 0.65},
+        {"name": "pirinc_hortum_tabancasi", "test": lambda c, bw, bh, w, h: 0.25 <= (c[0]/w) < 0.52 and (c[1]/h) >= 0.55},
+        {"name": "ahsap_fide_sandigi", "test": lambda c, bw, bh, w, h: 0.52 <= (c[0]/w) < 0.78 and (c[1]/h) >= 0.55},
+    ],
+
     "15_sanat_antikalar": [
         {"name": "yagli_boya_tablo", "test": lambda c, bw, bh, w, h: (c[0]/w) < 0.55 and (c[1]/h) < 0.45},
         {"name": "roma_bustu", "test": lambda c, bw, bh, w, h: (c[0]/w) >= 0.55 and (c[1]/h) < 0.45},

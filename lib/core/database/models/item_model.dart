@@ -18,6 +18,8 @@ class ItemModel {
   ItemCondition condition;
   double dirtPercentage;
 
+  double roomHeightRatio;
+
   ItemModel({
     required this.id,
     required this.code,
@@ -32,9 +34,18 @@ class ItemModel {
     required this.bitmask,
     required this.weight,
     required this.spritePath,
+    double? roomHeightRatio,
     this.condition = ItemCondition.good,
     this.dirtPercentage = 0.0,
-  });
+  }) : roomHeightRatio = roomHeightRatio ?? _calculateDefaultRoomRatio(width, height, weight);
+
+  static double _calculateDefaultRoomRatio(int w, int h, double wt) {
+    if (h >= 4 || (w >= 3 && h >= 2) || wt >= 35.0) return 0.60;
+    if (h >= 3 || (w >= 2 && h >= 2) || wt >= 14.0) return 0.40;
+    if (w >= 2 || h >= 2 || wt >= 5.0) return 0.26;
+    if (w == 1 && h == 1 && wt <= 1.0) return 0.08;
+    return 0.17;
+  }
 
   /// Varsayılan isim (nameTr)
   String get name => nameTr;
@@ -67,6 +78,7 @@ class ItemModel {
       'height': height,
       'bitmask': bitmask,
       'weight': weight,
+      'roomHeightRatio': roomHeightRatio,
       'spritePath': spritePath,
       'condition': condition.name,
       'dirtPercentage': dirtPercentage,
@@ -74,6 +86,12 @@ class ItemModel {
   }
 
   factory ItemModel.fromMap(Map<dynamic, dynamic> map) {
+    final w = (map['width'] as num?)?.toInt() ?? 1;
+    final h = (map['height'] as num?)?.toInt() ?? 1;
+    final wt = (map['weight'] as num?)?.toDouble() ?? 1.0;
+    final ratio = (map['roomHeightRatio'] as num?)?.toDouble() ??
+        _calculateDefaultRoomRatio(w, h, wt);
+
     return ItemModel(
       id: map['id'] as int? ?? 0,
       code: map['code'] as String? ?? '',
@@ -83,10 +101,11 @@ class ItemModel {
       nameEs: map['nameEs'] as String? ?? map['name_es'] as String? ?? '',
       category: map['category'] as String? ?? 'tools',
       baseValue: (map['baseValue'] as num?)?.toInt() ?? 100,
-      width: (map['width'] as num?)?.toInt() ?? 1,
-      height: (map['height'] as num?)?.toInt() ?? 1,
+      width: w,
+      height: h,
       bitmask: (map['bitmask'] as List<dynamic>?)?.map((e) => (e as num).toInt()).toList() ?? [1],
-      weight: (map['weight'] as num?)?.toDouble() ?? 1.0,
+      weight: wt,
+      roomHeightRatio: ratio,
       spritePath: map['spritePath'] as String? ?? '',
       condition: ItemCondition.values.firstWhere(
         (c) => c.name == map['condition'],

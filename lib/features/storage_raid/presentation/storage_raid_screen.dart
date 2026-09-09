@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:yeni_oyun_sablon/core/constants/game_constants.dart';
+import 'package:yeni_oyun_sablon/core/services/game_audio_service.dart';
 import 'package:yeni_oyun_sablon/core/database/models/item_model.dart';
 import 'package:yeni_oyun_sablon/core/localization/localization_service.dart';
 import 'package:yeni_oyun_sablon/core/theme/game_theme.dart';
@@ -247,6 +248,7 @@ class _StorageRaidScreenState extends ConsumerState<StorageRaidScreen>
   void _handleRotateItem() {
     if (_inspectedItem == null) return;
     HapticFeedback.lightImpact();
+    GameAudioService.instance.playClick();
     setState(() {
       _itemRotation = (_itemRotation + 90) % 360;
     });
@@ -257,6 +259,7 @@ class _StorageRaidScreenState extends ConsumerState<StorageRaidScreen>
     final result = await ref.read(trunkInventoryProvider.notifier).popItemAt(x, y);
     if (result != null) {
       HapticFeedback.mediumImpact();
+      GameAudioService.instance.playClick();
       setState(() {
         _inspectedItem = result.item;
         _itemRotation = result.rotation;
@@ -273,6 +276,7 @@ class _StorageRaidScreenState extends ConsumerState<StorageRaidScreen>
 
     // Oyuncunun profiline parayı hemen ekle
     ref.read(playerProfileProvider.notifier).addCash(scrapValue);
+    GameAudioService.instance.playCoin();
 
     // Flame sahnesinden eşyayı kaldır ve arkadaki gölgeleri aç
     _game?.removeSelectedItem();
@@ -287,6 +291,7 @@ class _StorageRaidScreenState extends ConsumerState<StorageRaidScreen>
   void _handleLoadToVehicle() {
     if (_inspectedItem == null) return;
     HapticFeedback.mediumImpact();
+    GameAudioService.instance.playClick();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -307,9 +312,10 @@ class _StorageRaidScreenState extends ConsumerState<StorageRaidScreen>
     );
   }
 
-  /// "NAKLİYE ÇAĞIR" butonu tıklandığında araç değişir ve 350 ₺ masraf yazılır
+  /// "NAKLİYE ÇAĞIR" butonu tıklandığında araç değişir ve masraf yazılır
   void _handleTransportCalled() {
     _transportCallsCount++;
+    GameAudioService.instance.playClick();
   }
 
   /// Raid bittiğinde resmî ihale tasfiye faturasını (RaidSummarySheet) aç
@@ -320,19 +326,31 @@ class _StorageRaidScreenState extends ConsumerState<StorageRaidScreen>
     final trunkState = ref.read(trunkInventoryProvider);
     final loadedItems = trunkState.placedItems;
     final isMasterPacker = trunkState.isMasterPacker;
+    final isFTUE = ref.read(ftueProvider) == FTUEStep.tetrisTutorial;
 
     // Usta İstifçi ödülü: %80+ dolulukta 150 İtibar (XP) verilir
     if (isMasterPacker) {
       ref.read(playerProfileProvider.notifier).addReputation(150);
     }
 
-    // Temizlik cezası: Kalan her eşya için taban değerinin %25'i fatura edilir
+    // Temizlik cezası: Acemi oyuncuyu korumak için FTUE adımında ceza oranı %5, normalde %25
+    final effectivePenaltyRate = isFTUE ? 0.05 : GameConstants.raidPenaltyRate;
     int cleaningFine = 0;
     for (final item in remainingItems) {
-      cleaningFine += (item.baseValue * GameConstants.raidPenaltyRate).round();
+      cleaningFine += (item.baseValue * effectivePenaltyRate).round();
     }
 
-    final totalTransportCost = _transportCallsCount * transportCallCost;
+    // İlk nakliye çağrısı %50 indirimli (175 ₺), sonrakiler 350 ₺
+    int totalTransportCost = 0;
+    if (_transportCallsCount > 0) {
+      totalTransportCost = 175 + ((_transportCallsCount - 1) * transportCallCost);
+    }
+
+    if (loadedItems.isNotEmpty || isMasterPacker) {
+      GameAudioService.instance.playVictory();
+    } else {
+      GameAudioService.instance.playGavel();
+    }
 
     // Fatura diyaloğunu aç
     showDialog(
@@ -614,6 +632,7 @@ class _StorageRaidScreenState extends ConsumerState<StorageRaidScreen>
                           onItemPickedFromTrunk: _handlePopItemFromTrunk,
                           onItemPlaced: () {
                             _game?.removeSelectedItem();
+                            GameAudioService.instance.playPack();
                             setState(() {
                               _inspectedItem = null;
                               _itemRotation = 0;

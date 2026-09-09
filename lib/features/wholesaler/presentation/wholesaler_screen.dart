@@ -42,7 +42,7 @@ class _WholesalerScreenState extends ConsumerState<WholesalerScreen> {
         final item = await DatabaseService.instance.getItemById(placer.itemId!);
         if (item != null) {
           items.add(item);
-          totalBase += item.baseValue;
+          totalBase += item.currentValue;
         }
       }
     }

@@ -32,8 +32,8 @@ void main() {
       expect(item.localizedName('ru'), equals('Ретро холодильник'));
       expect(item.localizedName('es'), equals('Refrigerador retro'));
 
-      // Kondisyon hesaplama: poor (0.5 çarpan) -> 450 * 0.5 = 225
-      expect(item.currentValue, equals(225));
+      // Kondisyon hesaplama: poor (0.35 çarpan) -> (450 * 0.35).round() = 158
+      expect(item.currentValue, equals(158));
 
       // Map serileştirme / deserializasyon
       final map = item.toMap();
